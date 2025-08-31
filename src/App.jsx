@@ -15,7 +15,7 @@ const Card = ({ className = "", children }) => (
 const SectionTitle = ({ children }) => (
   <h2 className="text-xl font-extrabold tracking-tight mb-2 text-gray-900">{children}</h2>
 );
-const I = {
+const I_OLD = {
   Cal: () => <span aria-hidden>📅</span>,
   DL: () => <span aria-hidden>⬇️</span>,
   List: () => <span aria-hidden>🧾</span>,
@@ -26,6 +26,20 @@ const I = {
   X: () => <span aria-hidden>✖️</span>,
   Plus: () => <span aria-hidden>➕</span>,
   Edit: () => <span aria-hidden>✏️</span>,
+};
+
+// Replaced icon set with ASCII-safe symbols (avoid encoding issues)
+const I = {
+  Cal: () => <span aria-hidden>[Cal]</span>,
+  DL: () => <span aria-hidden>[DL]</span>,
+  List: () => <span aria-hidden>[List]</span>,
+  Shuffle: () => <span aria-hidden>[Shuf]</span>,
+  Upload: () => <span aria-hidden>[Up]</span>,
+  Print: () => <span aria-hidden>[Print]</span>,
+  Link: () => <span aria-hidden>[Link]</span>,
+  X: () => <span aria-hidden>[X]</span>,
+  Plus: () => <span aria-hidden>[+]</span>,
+  Edit: () => <span aria-hidden>[Edit]</span>,
 };
 
 // =============== Utilities ===============
@@ -288,10 +302,10 @@ export default function MealPlannerApp() {
   }
 
   // Planning
-  function generateEmptyWeeks() {
-    const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    return Array.from({ length: 4 }, () => labels.map((l) => ({ label: l })));
-  }
+function generateEmptyWeeks() {
+  const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  return Array.from({ length: 4 }, () => labels.map((l, i) => ({ label: l, weekday: WEEKDAYS[i] })));
+}
   function generateWithConstraints(pool, { dinnersOnly = DEFAULTS.dinnersOnly, seed = "", maxRepeatAcross4Weeks = DEFAULTS.maxRepeatAcross4Weeks, cookIds = ["A", "B"], cooksList = cooks }) {
     const rng = rngFactory(seed || "default");
     const weeksLocal = generateEmptyWeeks();
@@ -344,12 +358,29 @@ export default function MealPlannerApp() {
     }
     return weeksLocal;
   }
+  function assignDatesToWeeks(weeksIn, startDateStr, hour = DEFAULTS.dinnerHour, minutes = DEFAULTS.dinnerMinutes) {
+    try {
+      const base = new Date(startDateStr);
+      if (isNaN(base.getTime())) return weeksIn;
+      // Ensure base is Monday 00:00 local
+      base.setHours(0, 0, 0, 0);
+      const out = weeksIn.map((week, wIdx) => week.map((day, dIdx) => {
+        const dt = new Date(base);
+        dt.setDate(base.getDate() + wIdx * 7 + dIdx);
+        dt.setHours(hour, minutes, 0, 0);
+        return { ...day, date: dt };
+      }));
+      return out;
+    } catch {
+      return weeksIn;
+    }
+  }
   function fillWeeks({ dinnersOnly = DEFAULTS.dinnersOnly } = {}) {
     const pool = [...filteredMeals];
     if (!pool.length) return alert("No meals available above threshold.");
     const ids = cooks.map((c) => c.id);
     const filled = generateWithConstraints(pool, { dinnersOnly, seed, maxRepeatAcross4Weeks: repeatCap, cookIds: ids.length ? ids : ["A"] });
-    setWeeks(filled);
+    setWeeks(assignDatesToWeeks(filled, startDate));
   }
   function shuffleWeeks() { fillWeeks({ dinnersOnly: mode === "dinners" }); }
 
@@ -410,6 +441,10 @@ export default function MealPlannerApp() {
 
   // Auto-fill once after meals load / cooks change
   useEffect(() => { if (!weeks[0][0].d) fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); }, [meals.length, repeatCap, cooks.length]);
+  // Update dates when startDate changes
+  useEffect(() => {
+    setWeeks(prev => assignDatesToWeeks(prev, startDate));
+  }, [startDate]);
 
   // === AUTOSAVE HELPERS ===
   const AUTOSAVE_KEY = "familyMealPlannerAutosave";
@@ -450,7 +485,7 @@ export default function MealPlannerApp() {
         setCooks(saved.cooks || DEFAULTS.cooks);
         setStartDate(saved.startDate || STARTING_DEFAULT());
         setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
-        setThreshold(saved.threshold ?? 3);
+        setTextThreshold(saved.threshold ?? 3);
         setMode(saved.mode || "dinners");
         setSeed(saved.seed || "");
       }
@@ -482,10 +517,12 @@ export default function MealPlannerApp() {
           availabilityWeeks: { 0: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true } },
         },
       ];
-      setTimeout(triggerAutosave, 0);
       return updated;
     });
-    setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+    setTimeout(() => {
+      fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly });
+      setTimeout(triggerAutosave, 100);
+    }, 0);
   }
   function removeCook(id) {
     if (cooks.length <= 1) return;
@@ -528,6 +565,10 @@ export default function MealPlannerApp() {
     setDirtyMeals(true);
   }
   function handleSaveMeals() {
+    setMeals(() => {
+      setTimeout(triggerAutosave, 0);
+      return localMeals;
+    });
     setDirtyMeals(false);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
@@ -535,6 +576,21 @@ export default function MealPlannerApp() {
   function handleDiscardMeals() {
     setMeals(localMeals);
     setDirtyMeals(false);
+  }
+  function handleAddMeal() {
+    setMeals(prev => [
+      ...prev,
+      { name: "New meal", avg: 3, type: "Dinner", ingredients: "", recipeUrl: "" }
+    ]);
+    setDirtyMeals(true);
+  }
+  function isValidUrl(u) {
+    try {
+      const x = new URL(String(u || "").trim());
+      return x.protocol === "http:" || x.protocol === "https:";
+    } catch {
+      return false;
+    }
   }
   const [sortKey, setSortKey] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
@@ -558,34 +614,35 @@ export default function MealPlannerApp() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-7xl mx-auto space-y-6">
+  <div className="max-w-7xl mx-auto space-y-6 w-full px-2 md:px-0">
           {/* Header */}
-          <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 w-full px-2 md:px-0">
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">Family Meal Planner</h1>
-              <p className="text-sm md:text-base text-gray-600">
-                4-week rotation • dinners at 6:00 PM • {cooks.map(c => c.name).join(' & ')}
+              <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-gray-900 leading-tight">Family Meal Planner</h1>
+              <p className="text-xs md:text-base text-gray-600">
+                4-week rotation • dinners at 6:00 PM<br className="md:hidden" />
+                <span className="block md:inline">{cooks.map(c => c.name).join(' & ')}</span>
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button className="bg-gray-900 text-white hover:opacity-90" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
-              <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+              <Button className="bg-gray-900 text-white hover:opacity-90 w-full md:w-auto min-h-[44px] text-base" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
+              <Button className="bg-indigo-600 text-white hover:bg-indigo-700 w-full md:w-auto min-h-[44px] text-base" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
             </div>
           </header>
 
           {/* Planner */}
-          <Card>
+          <Card className="w-full max-w-md md:max-w-3xl mx-auto px-2 md:px-6">
             <SectionTitle>4-Week Plan</SectionTitle>
-            <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="flex flex-wrap items-center gap-2 mb-3 w-full overflow-x-auto">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium mr-2">View week:</span>
-                <div className="inline-flex rounded-xl border overflow-hidden bg-white">
+                <div className="inline-flex rounded-xl border overflow-hidden bg-white w-full md:w-auto">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <button
                       key={i}
                       aria-label={`Switch to Week ${i + 1}`}
                       title={`Show Week ${i + 1} plan`}
-                      className={`px-6 py-2 text-sm focus:outline-none transition border-r last:border-r-0 font-semibold ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} ${i === 0 ? 'rounded-l-xl' : ''} ${i === 3 ? 'rounded-r-xl' : ''}`}
+                      className={`px-4 py-2 text-base font-semibold min-h-[44px] w-full md:w-auto focus:outline-none transition border-r last:border-r-0 ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} ${i === 0 ? 'rounded-l-xl' : ''} ${i === 3 ? 'rounded-r-xl' : ''}`}
                       style={{ minWidth: 80 }}
                       onClick={() => setActiveWeek(i)}
                     >Week {i + 1}</button>
