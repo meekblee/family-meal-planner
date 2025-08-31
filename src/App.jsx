@@ -192,10 +192,11 @@ const DEFAULTS = {
     { id: "B", name: "Sharon", availability: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true }, availabilityWeeks: {} }
   ],
 };
+// Stacey (A) back to blue hue
 const COOK_COLORS = {
   A: { chip: "bg-blue-100 text-blue-800 border-blue-200", text: "text-blue-700", border: "border-blue-300" },
-  B: { chip: "bg-purple-100 text-purple-800 border-purple-200", text: "text-purple-700", border: "border-purple-300" },
-  default: { chip: "bg-teal-100 text-teal-800 border-teal-200", text: "text-teal-700", border: "border-teal-300" },
+  B: { chip: "bg-violet-100 text-violet-700 border-violet-200", text: "text-violet-700", border: "border-violet-300" },
+  default: { chip: "bg-sky-100 text-sky-700 border-sky-200", text: "text-sky-700", border: "border-sky-300" },
 };
 const cookStyle = (id) => COOK_COLORS[id] || COOK_COLORS.default;
 const cookClass = (id) => (id === "A" ? "cookA" : id === "B" ? "cookB" : "cookDefault");
@@ -214,6 +215,7 @@ export default function MealPlannerApp() {
   const [gScope, setGScope] = useState("all");
   const [showEditor, setShowEditor] = useState(false);
   const [recipeModal, setRecipeModal] = useState({ open: false, meal: null });
+  const [addModal, setAddModal] = useState({ open: false, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } });
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [exportWeeks, setExportWeeks] = useState([]);
 
@@ -547,13 +549,16 @@ function generateEmptyWeeks() {
   }, []);
 
   const [mealSearch, setMealSearch] = useState("");
+  // Meals Editor state (moved up to avoid TDZ when showEditor is true)
+  const [localMeals, setLocalMeals] = useState(meals);
+  const [dirtyMeals, setDirtyMeals] = useState(false);
   // 1. Add missing Meals Editor handlers and sortedFilteredMeals
   function handleEditMeal(idx, key, value) {
-    setMeals(prev => prev.map((m, i) => i === idx ? { ...m, [key]: value } : m));
+    setLocalMeals(prev => prev.map((m, i) => i === idx ? { ...m, [key]: value } : m));
     setDirtyMeals(true);
   }
   function handleInferIngredients(idx) {
-    setMeals(prev => prev.map((m, i) => i === idx ? { ...m, ingredients: ingredientHeuristics(m.name) } : m));
+    setLocalMeals(prev => prev.map((m, i) => i === idx ? { ...m, ingredients: ingredientHeuristics(m.name) } : m));
     setDirtyMeals(true);
   }
   function handleSort(key) {
@@ -561,24 +566,22 @@ function generateEmptyWeeks() {
     setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
   }
   function handleDeleteMeal(idx) {
-    setMeals(prev => prev.filter((_, i) => i !== idx));
+    setLocalMeals(prev => prev.filter((_, i) => i !== idx));
     setDirtyMeals(true);
   }
   function handleSaveMeals() {
-    setMeals(() => {
-      setTimeout(triggerAutosave, 0);
-      return localMeals;
-    });
+    setMeals(localMeals);
     setDirtyMeals(false);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
+    setTimeout(triggerAutosave, 0);
   }
   function handleDiscardMeals() {
-    setMeals(localMeals);
+    setLocalMeals(meals);
     setDirtyMeals(false);
   }
   function handleAddMeal() {
-    setMeals(prev => [
+    setLocalMeals(prev => [
       ...prev,
       { name: "New meal", avg: 3, type: "Dinner", ingredients: "", recipeUrl: "" }
     ]);
@@ -594,7 +597,8 @@ function generateEmptyWeeks() {
   }
   const [sortKey, setSortKey] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
-  const sortedFilteredMeals = meals
+  const sourceMeals = showEditor ? localMeals : meals;
+  const sortedFilteredMeals = sourceMeals
     .filter(m => m.name.toLowerCase().includes(mealSearch.toLowerCase()) || (m.type && m.type.toLowerCase().includes(mealSearch.toLowerCase())))
     .sort((a, b) => {
       if (!sortKey) return 0;
@@ -603,10 +607,6 @@ function generateEmptyWeeks() {
     });
 
   // Meals Editor state fixes
-
-  // Meals Editor state
-  const [localMeals, setLocalMeals] = useState(meals);
-  const [dirtyMeals, setDirtyMeals] = useState(false);
 
   // When meals change, update localMeals for discard
   useEffect(() => { setLocalMeals(meals); }, [meals]);
@@ -651,10 +651,10 @@ function generateEmptyWeeks() {
               </div>
               {/* Start date and Repeat cap chips */}
               <div className="ml-4 flex gap-2 items-center">
-                <span className="px-3 py-2 rounded bg-blue-50 border border-blue-300 text-sm font-semibold text-blue-900 shadow-sm" style={{ minWidth: 120 }}>
+                <span className="px-3 py-2 rounded bg-sky-50 border border-sky-300 text-sm font-semibold text-sky-900 shadow-sm" style={{ minWidth: 120 }}>
                   Start date: <span className="font-bold">{startDate}</span>
                 </span>
-                <span className="px-3 py-2 rounded bg-blue-50 border border-blue-300 text-sm font-semibold text-blue-900 shadow-sm" style={{ minWidth: 120 }}>
+                <span className="px-3 py-2 rounded bg-sky-50 border border-sky-300 text-sm font-semibold text-sky-900 shadow-sm" style={{ minWidth: 120 }}>
                   Repeat cap: <span className="font-bold">{repeatCap}</span>
                 </span>
               </div>
@@ -753,57 +753,65 @@ function generateEmptyWeeks() {
                   placeholder="Search by name or type..."
                   value={mealSearch || ''}
                   onChange={e => setMealSearch(e.target.value)}
-                  className="border rounded px-2 py-1 w-64"
+                  className="border rounded-xl px-3 py-2 w-full sm:w-64 shadow-sm bg-white text-gray-900 focus:ring-2 focus:ring-sky-500"
                 />
-                <Button onClick={handleAddMeal}><I.Plus/> Add meal</Button>
+                <Button className="bg-sky-500 text-white hover:bg-sky-600" onClick={() => setAddModal({ open: true, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } })}><I.Plus/> Add meal</Button>
               </div>
             )}
             {/* Meals table with sorting, filtering, infer, delete, and URL validation */}
             {showEditor && (
-              <div className="overflow-auto max-h-[320px] border rounded">
+              <div className="overflow-auto max-h-[420px] border rounded-xl shadow-sm">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-gray-200 text-gray-800 sticky top-0">
+                  <thead className="bg-gradient-to-r from-pink-50 to-sky-50 text-gray-800 sticky top-0">
                     <tr>
-                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('name')}>Meal Name {sortKey==='name' ? (sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('avg')}>Avg {sortKey==='avg' ? (sortDir==='desc' ? '▼' : '▲') : ''}</th>
-                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('type')}>Type</th>
-                      <th className="text-left p-2">Ingredients</th>
-                      <th className="text-left p-2">Recipe URL</th>
-                      <th className="text-left p-2">Rating</th>
-                      <th className="text-left p-2">Delete</th>
+                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('name')}>Meal {sortKey==='name' ? (sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('avg')}>Avg {sortKey==='avg' ? (sortDir==='desc' ? '▼' : '▲') : ''}</th>
+                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('type')}>Type</th>
+                      <th className="text-left p-3 font-semibold">Ingredients</th>
+                      <th className="text-left p-3 font-semibold">Recipe</th>
+                      <th className="text-left p-3 font-semibold">Rating</th>
+                      <th className="text-left p-3 font-semibold">Delete</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedFilteredMeals.map((m, idx) => (
-                      <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50">
-                        <td className="p-2 text-gray-900 font-medium">
-                          <input value={m.name} onChange={e => handleEditMeal(idx, 'name', e.target.value)} className="w-full border rounded px-2 py-1" />
+                      <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50 hover:bg-sky-50/60">
+                        <td className="p-3 text-gray-900 font-medium min-w-[320px] lg:min-w-[380px]">
+                          <input value={m.name} placeholder="e.g., Turkey chili (low-sodium)" onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'name', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
                         </td>
-                        <td className="p-2">
-                          <input type="number" step="0.1" value={m.avg} onChange={e => handleEditMeal(idx, 'avg', e.target.value)} className="w-full border rounded px-2 py-1" />
+                        <td className="p-3 w-[88px]">
+                          <input type="number" step="0.1" min="0" max="10" value={m.avg} onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'avg', e.target.value)} className="w-20 border rounded-lg px-2 py-2 text-center bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
                         </td>
-                        <td className="p-2">
-                          <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(idx, 'type', e.target.value)} className="border rounded px-2 py-1">
+                        <td className="p-3 min-w-[120px] sm:min-w-[160px]">
+                          <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'type', e.target.value)} className="border rounded-lg px-2 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500">
                             <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
                           </select>
                         </td>
-                        <td className="p-2 flex gap-1 items-center">
-                          <input value={m.ingredients || ''} onChange={e => handleEditMeal(idx, 'ingredients', e.target.value)} className="w-full border rounded px-2 py-1" />
-                          <Button type="button" title="Infer ingredients" onClick={() => handleInferIngredients(idx)}><I.Edit/> Infer</Button>
+                        <td className="p-3 min-w-[360px] lg:min-w-[480px]">
+                          <div className="flex gap-2 items-start">
+                            <textarea
+                              rows={4}
+                              value={m.ingredients || ''}
+                              onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'ingredients', e.target.value)}
+                              className="w-full border rounded-lg px-3 py-2 min-h-[96px] md:min-h-[120px] resize-none leading-snug bg-white text-gray-900 focus:ring-2 focus:ring-sky-500"
+                              placeholder="Comma-separated: lean turkey, beans, tomato, onion"
+                            />
+                            <Button type="button" className="bg-white" title="Suggest from meal name" onClick={() => handleInferIngredients(sourceMeals.indexOf(m))}><I.Edit/> Infer</Button>
+                          </div>
                         </td>
-                        <td className="p-2">
-                          <input value={m.recipeUrl || ''} onChange={e => handleEditMeal(idx, 'recipeUrl', e.target.value)} className={`w-full border rounded px-2 py-1 ${m.recipeUrl && !isValidUrl(m.recipeUrl) ? 'border-yellow-400 bg-yellow-50' : ''}`} />
-                          {m.recipeUrl && !isValidUrl(m.recipeUrl) && <div className="text-xs text-yellow-700">URL may be invalid</div>}
+                        <td className="p-3 min-w-[220px]">
+                          <input value={m.recipeUrl || ''} placeholder="https://example.com/healthy-recipe" onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'recipeUrl', e.target.value)} className={`w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500 ${m.recipeUrl && !isValidUrl(m.recipeUrl) ? 'border-yellow-400 bg-yellow-50' : ''}`} />
+                          {m.recipeUrl && !isValidUrl(m.recipeUrl) && <div className="text-xs text-yellow-700 mt-1">URL may be invalid</div>}
                         </td>
-                        <td className="p-2">
-                          <div className="flex gap-1">
+                        <td className="p-3">
+                          <div className="flex gap-1 items-center">
                             {[1,2,3,4,5].map(star => (
-                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-400' : 'text-gray-300'}`} onClick={() => handleEditMeal(idx, 'rating', star)}>★</button>
+                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'} bg-transparent border-0 hover:scale-105 transition-transform`} onClick={() => handleEditMeal(idx, 'rating', star)}>★</button>
                             ))}
                           </div>
                         </td>
-                        <td className="p-2">
-                          <Button type="button" title="Delete meal" onClick={() => handleDeleteMeal(idx)}><I.X/></Button>
+                        <td className="p-3">
+                          <Button type="button" className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" title="Delete meal" onClick={() => handleDeleteMeal(idx)}><I.X/></Button>
                         </td>
                       </tr>
                     ))}
@@ -967,19 +975,19 @@ function generateEmptyWeeks() {
 
           {/* Inline styles for readability and color accents */}
           <style>{`
-            .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+            .meal-title{display:block;background:#fff;border:1px solid #bae6fd;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
             .meal-title:hover{text-decoration:underline}
             .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
             .day-card{position:relative}
-            .cookA.day-card{border-left:6px solid #2563eb}
-            .cookB.day-card{border-left:6px solid #7c3aed}
-            .cookDefault.day-card{border-left:6px solid #14b8a6}
+            .cookA.day-card{border-left:6px solid #60a5fa}
+            .cookB.day-card{border-left:6px solid #c4b5fd}
+            .cookDefault.day-card{border-left:6px solid #93c5fd}
             .cookA .day-body{background:#eff6ff}
             .cookB .day-body{background:#f5f3ff}
-            .cookDefault .day-body{background:#ecfdf5}
+            .cookDefault .day-body{background:#f0f9ff}
             .cookA .meal-title{border-color:#bfdbfe}
             .cookB .meal-title{border-color:#ddd6fe}
-            .cookDefault .meal-title{border-color:#cfe9d5}
+            .cookDefault .meal-title{border-color:#bae6fd}
             @media print { header { display:none !important } body { background:white } }
           `}</style>
         </div>
@@ -1047,21 +1055,113 @@ function generateEmptyWeeks() {
           </div>
         )}
 
+        {/* Add Meal Modal */}
+        {addModal.open && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setAddModal({ open: false, meal: addModal.meal })}>
+            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-[92%] p-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-lg font-semibold">Add a Meal</h3>
+                <button className="text-gray-500" onClick={() => setAddModal({ open: false, meal: addModal.meal })}><I.X/></button>
+              </div>
+              <form
+                className="space-y-3"
+                onSubmit={e => {
+                  e.preventDefault();
+                  const m = addModal.meal || {};
+                  const name = String(m.name || '').trim();
+                  const avg = Number(m.avg);
+                  const type = m.type || inferMealType(name);
+                  const ingredients = String(m.ingredients || '').trim() || ingredientHeuristics(name);
+                  const recipeUrl = String(m.recipeUrl || '').trim();
+                  if (!name) { alert('Please enter a meal name'); return; }
+                  if (isNaN(avg)) { alert('Please enter a numeric average score'); return; }
+                  setMeals(prev => [...prev, { name, avg, type, ingredients, recipeUrl }]);
+                  setAddModal({ open: false, meal: { name: '', avg: 7, type: 'Dinner', ingredients: '', recipeUrl: '' } });
+                  setDirtyMeals(true);
+                  setTimeout(triggerAutosave, 0);
+                }}
+              >
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Meal name</label>
+                  <input
+                    type="text"
+                    value={addModal.meal.name}
+                    onChange={e => setAddModal(m => ({ ...m, meal: { ...m.meal, name: e.target.value } }))}
+                    placeholder="e.g., Whole-wheat pasta with turkey meatballs"
+                    className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Average score</label>
+                    <input
+                      type="number" step="0.1" min="0" max="10"
+                      value={addModal.meal.avg}
+                      onChange={e => setAddModal(m => ({ ...m, meal: { ...m.meal, avg: e.target.value } }))}
+                      className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+                    <select
+                      value={addModal.meal.type}
+                      onChange={e => setAddModal(m => ({ ...m, meal: { ...m.meal, type: e.target.value } }))}
+                      className="w-full border rounded-xl px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option>Breakfast</option>
+                      <option>Lunch</option>
+                      <option>Dinner</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Ingredients</label>
+                  <div className="flex gap-2 items-start">
+                    <textarea
+                      rows={4}
+                      value={addModal.meal.ingredients}
+                      onChange={e => setAddModal(m => ({ ...m, meal: { ...m.meal, ingredients: e.target.value } }))}
+                      placeholder="Comma-separated: lean protein, vegetables, herbs, etc."
+                      className="w-full border rounded-xl px-3 py-2 min-h-[96px] md:min-h-[120px] resize-none leading-snug focus:ring-2 focus:ring-blue-500"
+                    />
+                    <Button type="button" className="bg-white" onClick={() => setAddModal(m => ({ ...m, meal: { ...m.meal, ingredients: ingredientHeuristics(m.meal.name) } }))}><I.Edit/> Infer</Button>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Tip: leave blank and tap Infer to auto-suggest from name.</div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Recipe URL (optional)</label>
+                  <input
+                    type="url"
+                    value={addModal.meal.recipeUrl}
+                    onChange={e => setAddModal(m => ({ ...m, meal: { ...m.meal, recipeUrl: e.target.value } }))}
+                    placeholder="https://..."
+                    className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button type="button" className="bg-gray-100" onClick={() => setAddModal({ open: false, meal: addModal.meal })}><I.X/> Cancel</Button>
+                  <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700"><I.Plus/> Save</Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Inline styles for readability and color accents */}
         <style>{`
-          .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+          .meal-title{display:block;background:#fff;border:1px solid #bae6fd;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
           .meal-title:hover{text-decoration:underline}
           .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
           .day-card{position:relative}
-          .cookA.day-card{border-left:6px solid #2563eb}
-          .cookB.day-card{border-left:6px solid #7c3aed}
-          .cookDefault.day-card{border-left:6px solid #14b8a6}
+          .cookA.day-card{border-left:6px solid #60a5fa}
+          .cookB.day-card{border-left:6px solid #c4b5fd}
+          .cookDefault.day-card{border-left:6px solid #93c5fd}
           .cookA .day-body{background:#eff6ff}
           .cookB .day-body{background:#f5f3ff}
-          .cookDefault .day-body{background:#ecfdf5}
+          .cookDefault .day-body{background:#f0f9ff}
           .cookA .meal-title{border-color:#bfdbfe}
           .cookB .meal-title{border-color:#ddd6fe}
-          .cookDefault .meal-title{border-color:#cfe9d5}
+          .cookDefault .meal-title{border-color:#bae6fd}
           @media print { header { display:none !important } body { background:white } }
         `}</style>
       </div>
