@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 // =============== Minimal UI atoms (no extra props) ===============
 const Button = ({ className = "", children, ...props }) => (
@@ -13,7 +13,7 @@ const Card = ({ className = "", children }) => (
   <div className={`rounded-2xl border border-gray-200 shadow-sm p-4 bg-white ${className}`}>{children}</div>
 );
 const SectionTitle = ({ children }) => (
-  <h2 className="text-xl font-semibold tracking-tight mb-2">{children}</h2>
+  <h2 className="text-xl font-extrabold tracking-tight mb-2 text-gray-900">{children}</h2>
 );
 const I = {
   Cal: () => <span aria-hidden>📅</span>,
@@ -52,7 +52,10 @@ function toCsv(rows) {
 }
 function toICS(events) {
   const pad = (n) => String(n).padStart(2, "0");
-  const dt = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+  const dt = (d) => {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+    return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+  };
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Family Meal Planner//EN"];
   events.forEach((ev, i) => {
     lines.push("BEGIN:VEVENT");
@@ -60,8 +63,9 @@ function toICS(events) {
     lines.push(`DTSTAMP:${dt(new Date())}`);
     lines.push(`DTSTART:${dt(ev.start)}`);
     lines.push(`DTEND:${dt(ev.end)}`);
-    lines.push(`SUMMARY:${String(ev.title || "").replace(/,/g, " ")}`);
+    lines.push(`SUMMARY:${ev.title}`);
     if (ev.description) lines.push(`DESCRIPTION:${String(ev.description).replace(/\n/g, "\\n").replace(/,/g, " ")}`);
+    if (ev.recipeUrl) lines.push(`URL:${ev.recipeUrl}`);
     lines.push("END:VEVENT");
   });
   lines.push("END:VCALENDAR");
@@ -169,7 +173,10 @@ const DEFAULTS = {
   dinnerHour: 18,
   dinnerMinutes: 0,
   maxRepeatAcross4Weeks: 2,
-  cooks: [ { id: "A", name: "Stacey" }, { id: "B", name: "Sharon" } ],
+  cooks: [
+    { id: "A", name: "Stacey", availability: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true }, availabilityWeeks: {} },
+    { id: "B", name: "Sharon", availability: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true }, availabilityWeeks: {} }
+  ],
 };
 const COOK_COLORS = {
   A: { chip: "bg-blue-100 text-blue-800 border-blue-200", text: "text-blue-700", border: "border-blue-300" },
@@ -182,7 +189,7 @@ const cookClass = (id) => (id === "A" ? "cookA" : id === "B" ? "cookB" : "cookDe
 // =============== App ===============
 export default function MealPlannerApp() {
   const [meals, setMeals] = useState([]);
-  const [threshold, setThreshold] = useState(3);
+  const [threshold, setTextThreshold] = useState(3);
   const [mode, setMode] = useState("dinners");
   const [seed, setSeed] = useState("");
   const [startDate, setStartDate] = useState(STARTING_DEFAULT());
@@ -193,9 +200,13 @@ export default function MealPlannerApp() {
   const [gScope, setGScope] = useState("all");
   const [showEditor, setShowEditor] = useState(false);
   const [recipeModal, setRecipeModal] = useState({ open: false, meal: null });
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const [exportWeeks, setExportWeeks] = useState([]);
 
   const csvInputRef = useRef(null);
   const xlsInputRef = useRef(null);
+  const autosaveDebounceRef = useRef();
+  const didPromptRestoreRef = useRef(false);
 
   const cookName = (id) => cooks.find((c) => c.id === id)?.name || id;
 
@@ -281,37 +292,59 @@ export default function MealPlannerApp() {
     const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     return Array.from({ length: 4 }, () => labels.map((l) => ({ label: l })));
   }
-  function generateWithConstraints(pool, { dinnersOnly = DEFAULTS.dinnersOnly, seed = "", maxRepeatAcross4Weeks = DEFAULTS.maxRepeatAcross4Weeks, cookIds = ["A", "B"] }) {
+  function generateWithConstraints(pool, { dinnersOnly = DEFAULTS.dinnersOnly, seed = "", maxRepeatAcross4Weeks = DEFAULTS.maxRepeatAcross4Weeks, cookIds = ["A", "B"], cooksList = cooks }) {
     const rng = rngFactory(seed || "default");
     const weeksLocal = generateEmptyWeeks();
     const counts = Object.create(null);
-
-    const pick = (weekIdx, dayIdx) => {
-      const prevDay = dayIdx > 0 ? weeksLocal[weekIdx][dayIdx - 1] : null;
-      const prevName = prevDay && prevDay.d && prevDay.d.name;
-      let candidates = pool.filter((m) => (!dinnersOnly || (m.type || inferMealType(m.name)) === "Dinner") && (counts[m.name] || 0) < maxRepeatAcross4Weeks && m.name !== prevName);
-      if (!candidates.length) candidates = pool.filter((m) => (!dinnersOnly || (m.type || inferMealType(m.name)) === "Dinner") && (counts[m.name] || 0) < maxRepeatAcross4Weeks);
-      if (!candidates.length) candidates = pool.filter((m) => !dinnersOnly || (m.type || inferMealType(m.name)) === "Dinner");
-      return candidates[Math.floor(rng() * candidates.length)];
-    };
-
+    const recentByName = [];
+    const RECENT_SIZE = 8;
     for (let w = 0; w < 4; w++) {
       for (let d = 0; d < 7; d++) {
-        const day = weeksLocal[w][d];
-        const dinner = pick(w, d);
-        day.d = dinner;
-        counts[dinner.name] = (counts[dinner.name] || 0) + 1;
-        if (!dinnersOnly) {
-          day.b = pool.find((m) => (m.type || inferMealType(m.name)) === "Breakfast") || dinner;
-          day.l = pool.find((m) => (m.type || inferMealType(m.name)) === "Lunch") || dinner;
+        const prevDay = d > 0 ? weeksLocal[w][d - 1] : null;
+        // Candidate pool
+        let candidates = pool.filter((m) => (!dinnersOnly || (m.type || inferMealType(m.name)) === "Dinner") && (counts[m.name] || 0) < maxRepeatAcross4Weeks);
+        if (!candidates.length) candidates = pool.filter((m) => !dinnersOnly || (m.type || inferMealType(m.name)) === "Dinner");
+        if (!candidates.length) candidates = [...pool];
+        // Weighting
+        const weighted = candidates.map(m => {
+          let weight = (Number(m.avg) || 0) * 100;
+          if (recentByName.includes(m.name)) weight -= 100;
+          if (prevDay && prevDay.d && prevDay.d.name === m.name) weight -= 50;
+          return { meal: m, weight };
+        });
+        weighted.sort((a, b) => b.weight - a.weight);
+        // Pick randomly among top 6
+        const top = weighted.slice(0, 6);
+        const pickIdx = Math.floor(rng() * top.length);
+        let dinner = top[pickIdx]?.meal || candidates[Math.floor(rng() * candidates.length)];
+        // Avoid immediate adjacency if possible
+        if (prevDay && prevDay.d && prevDay.d.name === (dinner && dinner.name) && top.length > 1) {
+          dinner = top.find(x => x.meal.name !== prevDay.d.name)?.meal || dinner;
         }
-        const ids = cookIds && cookIds.length ? cookIds : ["A"];
-        day.cook = ids[(d + w) % ids.length];
+        if (!dinner || !dinner.name) {
+          dinner = candidates[0] || pool[0];
+          if (!dinner) continue;
+        }
+        weeksLocal[w][d].d = dinner;
+        counts[dinner.name] = (counts[dinner.name] || 0) + 1;
+        // Update recent queue
+        recentByName.push(dinner.name);
+        if (recentByName.length > RECENT_SIZE) recentByName.shift();
+        // Cook assignment with availability
+        const weekdayKey = weeksLocal[w][d].weekday;
+        // Only include cooks available for this week and day
+        const availableCooks = cooksList.filter(c =>
+          (c.availabilityWeeks ? c.availabilityWeeks[w] !== false : true) &&
+          c.availability && c.availability[weekdayKey]
+        );
+        const ids = availableCooks.length ? availableCooks.map(c => c.id) : cooksList.map(c => c.id);
+        weeksLocal[w][d].cook = ids[(d + w) % ids.length];
+        // ...existing code for breakfast/lunch if needed...
       }
     }
     return weeksLocal;
   }
-  function fillWeeks({ dinnersOnly = DEFAULTS.dinnersOnly }) {
+  function fillWeeks({ dinnersOnly = DEFAULTS.dinnersOnly } = {}) {
     const pool = [...filteredMeals];
     if (!pool.length) return alert("No meals available above threshold.");
     const ids = cooks.map((c) => c.id);
@@ -344,17 +377,21 @@ export default function MealPlannerApp() {
     return base + urlPart;
   }
   function downloadICS() {
-    const base = new Date(startDate + 'T00:00:00');
+    const selectedWeeks = exportWeeks.length ? exportWeeks : weeks.map((_, i) => i);
     const events = [];
-    for (let w = 0; w < 4; w++) {
-      for (let d = 0; d < 7; d++) {
-        const day = weeks[w][d]; const dinner = day.d; if (!dinner) continue;
-        const start = new Date(base); start.setDate(start.getDate() + (w * 7 + d)); start.setHours(DEFAULTS.dinnerHour, DEFAULTS.dinnerMinutes, 0, 0);
-        const end = new Date(start); end.setMinutes(end.getMinutes() + 90);
-        const description = buildEventDescription(dinner);
-        events.push({ title: `${dinner.name} (Cook ${cookName(day.cook || 'A')})`, start, end, description });
-      }
-    }
+    selectedWeeks.forEach(wIdx => {
+      weeks[wIdx].forEach(day => {
+        if (day.d) {
+          events.push({
+            title: `${day.d.name} (Cook ${cookName(day.cook || 'A')})`,
+            start: day.date,
+            end: day.date,
+            description: buildEventDescription(day.d),
+            recipeUrl: day.d.recipeUrl || ''
+          });
+        }
+      });
+    });
     const ics = toICS(events);
     downloadFile('family-meal-plan.ics', ics, 'text/calendar;charset=utf-8');
   }
@@ -374,237 +411,604 @@ export default function MealPlannerApp() {
   // Auto-fill once after meals load / cooks change
   useEffect(() => { if (!weeks[0][0].d) fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); }, [meals.length, repeatCap, cooks.length]);
 
+  // === AUTOSAVE HELPERS ===
+  const AUTOSAVE_KEY = "familyMealPlannerAutosave";
+  function saveAutosave(state) {
+    const minimal = {
+      meals: state.meals,
+      weeks: state.weeks,
+      cooks: state.cooks,
+      startDate: state.startDate,
+      repeatCap: state.repeatCap,
+      threshold: state.threshold,
+      mode: state.mode,
+      seed: state.seed,
+    };
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(minimal));
+      setShowSavedToast(true);
+      setTimeout(() => setShowSavedToast(false), 1200);
+    } catch {}
+  }
+  function loadAutosave() {
+    try {
+      const raw = localStorage.getItem(AUTOSAVE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch { return null; }
+  }
+
+  // Prompt to restore autosave on first mount
+  useEffect(() => {
+    if (didPromptRestoreRef.current) return;
+    const saved = loadAutosave();
+    if (saved) {
+      didPromptRestoreRef.current = true;
+      if (window.confirm("Restore previous autosave?")) {
+        setMeals(saved.meals || []);
+        setWeeks(saved.weeks || generateEmptyWeeks());
+        setCooks(saved.cooks || DEFAULTS.cooks);
+        setStartDate(saved.startDate || STARTING_DEFAULT());
+        setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
+        setThreshold(saved.threshold ?? 3);
+        setMode(saved.mode || "dinners");
+        setSeed(saved.seed || "");
+      }
+    }
+  }, []);
+  // Debounced autosave on relevant state changes
+  useEffect(() => {
+    if (autosaveDebounceRef.current) clearTimeout(autosaveDebounceRef.current);
+    autosaveDebounceRef.current = setTimeout(() => {
+      saveAutosave({ meals, weeks, cooks, startDate, repeatCap, threshold, mode, seed });
+    }, 400);
+    return () => clearTimeout(autosaveDebounceRef.current);
+  }, [meals, weeks, cooks, startDate, repeatCap, threshold, mode, seed]);
+  // Helper to trigger autosave immediately
+  function triggerAutosave() {
+    saveAutosave({ meals, weeks, cooks, startDate, repeatCap, threshold, mode, seed });
+  }
+
   // Cook list mgmt
-  function addCook() { const nextId = String.fromCharCode(65 + cooks.length); setCooks((prev) => [...prev, { id: nextId, name: `Cook ${nextId}` }]); }
-  function removeCook(id) { if (cooks.length <= 1) return; setCooks((prev) => prev.filter((c) => c.id !== id)); }
+  function addCook() {
+    const nextId = String.fromCharCode(65 + cooks.length);
+    setCooks(prev => {
+      const updated = [
+        ...prev,
+        {
+          id: nextId,
+          name: "",
+          availability: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true },
+          availabilityWeeks: { 0: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true } },
+        },
+      ];
+      setTimeout(triggerAutosave, 0);
+      return updated;
+    });
+    setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+  }
+  function removeCook(id) {
+    if (cooks.length <= 1) return;
+    setCooks((prev) => {
+      const updated = prev.filter((c) => c.id !== id);
+      setTimeout(triggerAutosave, 0);
+      return updated;
+    });
+  }
+
+  // Ensure all cooks have full default availability
+  useEffect(() => {
+    setCooks(prev => prev.map(c => ({
+      ...c,
+      availability: {
+        mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true
+      },
+      availabilityWeeks: Object.keys(c.availabilityWeeks || {}).length > 0
+        ? c.availabilityWeeks
+        : { 0: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true } }
+    })));
+  }, []);
+
+  const [mealSearch, setMealSearch] = useState("");
+  // 1. Add missing Meals Editor handlers and sortedFilteredMeals
+  function handleEditMeal(idx, key, value) {
+    setMeals(prev => prev.map((m, i) => i === idx ? { ...m, [key]: value } : m));
+    setDirtyMeals(true);
+  }
+  function handleInferIngredients(idx) {
+    setMeals(prev => prev.map((m, i) => i === idx ? { ...m, ingredients: ingredientHeuristics(m.name) } : m));
+    setDirtyMeals(true);
+  }
+  function handleSort(key) {
+    setSortKey(key);
+    setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+  }
+  function handleDeleteMeal(idx) {
+    setMeals(prev => prev.filter((_, i) => i !== idx));
+    setDirtyMeals(true);
+  }
+  function handleSaveMeals() {
+    setDirtyMeals(false);
+    setShowSavedToast(true);
+    setTimeout(() => setShowSavedToast(false), 2000);
+  }
+  function handleDiscardMeals() {
+    setMeals(localMeals);
+    setDirtyMeals(false);
+  }
+  const [sortKey, setSortKey] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+  const sortedFilteredMeals = meals
+    .filter(m => m.name.toLowerCase().includes(mealSearch.toLowerCase()) || (m.type && m.type.toLowerCase().includes(mealSearch.toLowerCase())))
+    .sort((a, b) => {
+      if (!sortKey) return 0;
+      if (sortDir === 'asc') return String(a[sortKey]).localeCompare(String(b[sortKey]));
+      return String(b[sortKey]).localeCompare(String(a[sortKey]));
+    });
+
+  // Meals Editor state fixes
+
+  // Meals Editor state
+  const [localMeals, setLocalMeals] = useState(meals);
+  const [dirtyMeals, setDirtyMeals] = useState(false);
+
+  // When meals change, update localMeals for discard
+  useEffect(() => { setLocalMeals(meals); }, [meals]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">Family Meal Planner</h1>
-            <p className="text-sm md:text-base text-gray-600">4-week rotation • dinners at 6:00 PM • Stacey &amp; Sharon</p>
-          </div>
-          <div className="flex gap-2">
-            <Button className="bg-gray-900 text-white hover:opacity-90" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
-            <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
-          </div>
-        </header>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header */}
+          <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">Family Meal Planner</h1>
+              <p className="text-sm md:text-base text-gray-600">
+                4-week rotation • dinners at 6:00 PM • {cooks.map(c => c.name).join(' & ')}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button className="bg-gray-900 text-white hover:opacity-90" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
+              <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
+            </div>
+          </header>
 
-        {/* Controls */}
-        <Card>
-          <div className="mb-3 text-sm text-gray-600">
-            The app accepts a simple table with <em>Meal Name</em> & <em>Average Score</em>, or your Sheet2 format with <em>Dish</em>, voter columns, and <em>Total Score</em>. Optionally include a <em>Recipe URL</em> column.
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Upload data</label>
-              <div className="flex gap-2">
-                <Button onClick={() => csvInputRef.current?.click()}><I.Upload/> Upload CSV</Button>
-                <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files && handleCSV(e.target.files[0])} />
-                <Button onClick={() => xlsInputRef.current?.click()}><I.Upload/> Upload Excel</Button>
-                <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => e.target.files && handleExcel(e.target.files[0])} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Min avg score</label>
-              <input type="number" step="0.1" value={threshold} onChange={(e) => setThreshold(Number(e.target.value) || 0)} className="w-full border rounded px-2 py-1 bg-white text-gray-900" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Mode</label>
-              <div className="inline-flex rounded-xl border overflow-hidden w-full">
-                <button className={`flex-1 px-3 py-1 text-sm ${mode === 'dinners' ? 'bg-blue-600 text-white' : 'bg-white'}`} onClick={() => setMode('dinners')}>Dinners</button>
-                <button className={`flex-1 px-3 py-1 text-sm ${mode === 'all' ? 'bg-blue-600 text-white' : 'bg-white'}`} onClick={() => setMode('all')}>All 21</button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Repeat cap (per 4 wks)</label>
-              <input type="number" min={1} max={7} value={repeatCap} onChange={(e) => setRepeatCap(Math.max(1, Math.min(7, Number(e.target.value) || 1)))} className="w-full border rounded px-2 py-1 bg-white text-gray-900" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Start date (Mon)</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full border rounded px-2 py-1 bg-white text-gray-900" />
-            </div>
-            <div className="lg:col-span-6 flex flex-wrap gap-2 justify-end mt-1">
-              <div className="mr-auto flex items-center gap-2">
-                <label className="text-xs font-medium text-gray-600">Grocery scope</label>
-                <select value={gScope} onChange={(e) => setGScope(e.target.value)} className="border rounded px-2 py-1 bg-white text-gray-900">
-                  <option value="all">Week (all cooks)</option>
-                  {cooks.map((c) => (<option key={c.id} value={c.id}>Week by {c.name}</option>))}
-                </select>
-              </div>
-              <Button onClick={() => downloadGroceryCSV(gScope === 'all' ? null : gScope)}><I.DL/> Grocery CSV</Button>
-              <Button onClick={downloadWeekCSV}><I.List/> Week CSV</Button>
-              <Button onClick={shuffleWeeks}><I.Shuffle/> Shuffle Plan</Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Meals editor */}
-        <Card>
-          <div className="flex items-center justify-between mb-2">
-            <div className="font-semibold text-gray-900">Meals Editor</div>
-            <Button onClick={() => setShowEditor((v) => !v)}><I.Edit/> <span className="ml-1">{showEditor ? 'Hide' : 'Edit'} meals</span></Button>
-          </div>
-          {!showEditor && <div className="text-xs text-gray-600 mb-1">Click <span className="font-medium">Edit meals</span> to view & edit the list ({filteredMeals.length} above threshold).</div>}
-          {showEditor && (
-            <div className="overflow-auto max-h-[320px] border rounded">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-200 text-gray-800 sticky top-0">
-                  <tr>
-                    <th className="text-left p-2">Meal Name</th>
-                    <th className="text-left p-2">Avg</th>
-                    <th className="text-left p-2">Type</th>
-                    <th className="text-left p-2">Ingredients</th>
-                    <th className="text-left p-2">Recipe URL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredMeals.map((m, idx) => (
-                    <tr key={idx} className="border-t odd:bg-white even:bg-gray-50">
-                      <td className="p-2 text-gray-900 font-medium">{m.name}</td>
-                      <td className="p-2">{Number(m.avg).toFixed(1)}</td>
-                      <td className="p-2">
-                        <select value={m.type || 'Dinner'} onChange={(e) => { const t = e.target.value; setMeals((prev) => prev.map((x, i) => (i === idx ? { ...x, type: t } : x))); }} className="border rounded px-2 py-1">
-                          <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
-                        </select>
-                      </td>
-                      <td className="p-2">
-                        <input value={m.ingredients || ''} onChange={(e) => { const val = e.target.value; setMeals((prev) => prev.map((x, i) => (i === idx ? { ...x, ingredients: val } : x))); }} className="w-full border rounded px-2 py-1" />
-                      </td>
-                      <td className="p-2">
-                        <div className="flex items-center gap-2">
-                          <I.Link/>
-                          <input value={m.recipeUrl || ''} placeholder="https://..." onChange={(e) => { const val = e.target.value; setMeals((prev) => prev.map((x, i) => (i === idx ? { ...x, recipeUrl: val } : x))); }} className="w-full border rounded px-2 py-1" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-
-        {/* Planner */}
-        <Card>
-          <SectionTitle>3) 4-Week Plan</SectionTitle>
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Button key={i} className={`${activeWeek === i ? 'bg-blue-600 text-white' : 'bg-white'}`} onClick={() => setActiveWeek(i)}>Week {i + 1}</Button>
-            ))}
-            <div className="ml-auto flex flex-wrap gap-2 items-center">
+          {/* Planner */}
+          <Card>
+            <SectionTitle>4-Week Plan</SectionTitle>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm">Grocery scope:</span>
-                <select value={gScope} onChange={(e) => setGScope(e.target.value)} className="border rounded px-2 py-1">
-                  <option value="all">Week (all cooks)</option>
-                  {cooks.map((c) => (<option key={c.id} value={c.id}>Week by {c.name}</option>))}
-                </select>
-              </div>
-              <Button onClick={() => downloadGroceryCSV(gScope === 'all' ? null : gScope)}><I.DL/> <span className="ml-1">Download Grocery CSV</span></Button>
-              <Button onClick={downloadWeekCSV}><I.List/> <span className="ml-1">Download Week CSV</span></Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {weeks[activeWeek].map((day, idx) => (
-              <div key={idx} className={`day-card rounded-2xl border border-gray-200 overflow-hidden ${cookClass(day.cook)}`}>
-                <div className="bg-gray-50 px-3 py-2 flex justify-between items-center">
-                  <div className="font-semibold text-gray-900">{day.label}</div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}>{cookName(day.cook)}</span>
+                <span className="text-sm font-medium mr-2">View week:</span>
+                <div className="inline-flex rounded-xl border overflow-hidden bg-white">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <button
+                      key={i}
+                      aria-label={`Switch to Week ${i + 1}`}
+                      title={`Show Week ${i + 1} plan`}
+                      className={`px-6 py-2 text-sm focus:outline-none transition border-r last:border-r-0 font-semibold ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} ${i === 0 ? 'rounded-l-xl' : ''} ${i === 3 ? 'rounded-r-xl' : ''}`}
+                      style={{ minWidth: 80 }}
+                      onClick={() => setActiveWeek(i)}
+                    >Week {i + 1}</button>
+                  ))}
                 </div>
-                <div className="p-3 space-y-2">
-                  {mode === 'all' && (
-                    <div className="bg-yellow-50 rounded-lg p-2">
-                      <div className="text-xs text-gray-600">Breakfast</div>
-                      <div className="font-medium">{(day.b && day.b.name) || '—'}</div>
+              </div>
+              {/* Start date and Repeat cap chips */}
+              <div className="ml-4 flex gap-2 items-center">
+                <span className="px-3 py-2 rounded bg-blue-50 border border-blue-300 text-sm font-semibold text-blue-900 shadow-sm" style={{ minWidth: 120 }}>
+                  Start date: <span className="font-bold">{startDate}</span>
+                </span>
+                <span className="px-3 py-2 rounded bg-blue-50 border border-blue-300 text-sm font-semibold text-blue-900 shadow-sm" style={{ minWidth: 120 }}>
+                  Repeat cap: <span className="font-bold">{repeatCap}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {weeks[activeWeek].map((day, idx) => (
+                  <div key={idx} className={`day-card rounded-2xl border border-gray-200 overflow-hidden ${cookClass(day.cook)}`}>
+                    <div className="bg-gray-50 px-3 py-2 flex justify-between items-center">
+                      <div className="font-semibold text-gray-900">{day.label}</div>
+                      <span className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}>{cookName(day.cook)}</span>
                     </div>
-                  )}
-                  {mode === 'all' && (
-                    <div className="bg-blue-50 rounded-lg p-2">
-                      <div className="text-xs text-gray-600">Lunch</div>
-                      <div className="font-medium">{(day.l && day.l.name) || '—'}</div>
+                    <div className="p-3 space-y-2">
+                      {mode === 'all' && (
+                        <div className="bg-yellow-50 rounded-lg p-2">
+                          <div className="text-xs text-gray-600">Breakfast</div>
+                          <div className="font-medium">{(day.b && day.b.name) || '—'}</div>
+                        </div>
+                      )}
+                      {mode === 'all' && (
+                        <div className="bg-blue-50 rounded-lg p-2">
+                          <div className="text-xs text-gray-600">Lunch</div>
+                          <div className="font-medium">{(day.l && day.l.name) || '—'}</div>
+                        </div>
+                      )}
+                      <div className="rounded-lg p-2 day-body">
+                        <div className="text-xs text-gray-600 flex items-center gap-2">Dinner
+                          <button
+                            className="ml-2 px-2 py-1 rounded hover:bg-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            title="Edit or Replace Dinner"
+                            aria-label="Edit or Replace Dinner"
+                            tabIndex={0}
+                            style={{ lineHeight: 1, minWidth: 40, minHeight: 40 }}
+                            onClick={() => setRecipeModal({ open: true, meal: day.d || null, dayIndex: idx, weekIndex: activeWeek })}
+                            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { setRecipeModal({ open: true, meal: day.d || null, dayIndex: idx, weekIndex: activeWeek }); } }}
+                          >🔄</button>
+                          <span className="ml-2 text-xs text-gray-500">Edit, Replace, or Add recipe and link.</span>
+                        </div>
+                        <button className="meal-title w-full text-left" onClick={() => setRecipeModal({ open: true, meal: day.d || null, dayIndex: idx, weekIndex: activeWeek })}>{(day.d && day.d.name) || '—'}</button>
+                        <div className="meal-ingredients mt-2">{(day.d && day.d.ingredients) || ''}</div>
+                        {!!(day.d && day.d.recipeUrl) && (
+                          <div className="text-xs mt-1"><a className="underline" target="_blank" rel="noreferrer" href={day.d.recipeUrl}>Open saved recipe</a></div>
+                        )}
+                        {/* Star rating for this meal instance */}
+                        {day.d && (
+                          <div className="flex flex-col items-center mt-2">
+                            <div className="flex gap-1">
+                              {[1,2,3,4,5].map(star => (
+                                <button key={star} className={`text-base ${day.d.rating >= star ? 'text-yellow-500' : 'text-gray-400'} transition-colors`} style={{ padding: '2px 6px' }} onClick={() => {
+                                  setWeeks(prev => prev.map((week, wIdx) => wIdx === activeWeek ? week.map((d, dIdx) => dIdx === idx ? { ...d, d: { ...d.d, rating: star } } : d) : week));
+                                  setMeals(prev => prev.map(m => m.name === day.d.name ? { ...m, rating: star } : m));
+                                }} aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}>{day.d.rating >= star ? '★' : '☆'}</button>
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500 mt-1">Rate this meal</span>
+                            {/* Search and Replace meal dropdown */}
+                            <div className="mt-2 w-full flex flex-col items-center">
+                              <input
+                                type="text"
+                                className="border rounded px-2 py-1 w-full max-w-xs mb-2"
+                                placeholder="Search meals..."
+                                value={mealSearch}
+                                onChange={e => setMealSearch(e.target.value)}
+                              />
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Replace meal:</label>
+                              <select className="border rounded px-2 py-1 w-full max-w-xs" value={day.d.name} onChange={e => {
+                                const newName = e.target.value;
+                                const newMeal = meals.find(m => m.name === newName);
+                                setWeeks(prev => prev.map((week, wIdx) => wIdx === activeWeek ? week.map((d, dIdx) => dIdx === idx ? { ...d, d: { ...newMeal } } : d) : week));
+                              }}>
+                                <option value="">-- Select meal --</option>
+                                {meals.filter(m => m.name.toLowerCase().includes(mealSearch.toLowerCase())).map((m, i) => (<option key={i} value={m.name}>{m.name}</option>))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <div className="rounded-lg p-2 day-body">
-                    <div className="text-xs text-gray-600">Dinner</div>
-                    <button className="meal-title w-full text-left" onClick={() => setRecipeModal({ open: true, meal: day.d || null })}>{(day.d && day.d.name) || '—'}</button>
-                    <div className="meal-ingredients mt-2">{(day.d && day.d.ingredients) || ''}</div>
-                    {!!(day.d && day.d.recipeUrl) && (
-                      <div className="text-xs mt-1"><a className="underline" target="_blank" rel="noreferrer" href={day.d.recipeUrl}>Open saved recipe</a></div>
-                    )}
+                  </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Meals editor (moved above Cooks) */}
+          <Card className="bg-gray-50 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-semibold text-gray-900">Meals Editor</div>
+              <Button onClick={() => setShowEditor((v) => !v)}><I.Edit/> <span className="ml-1">{showEditor ? 'Hide' : 'Edit'} meals</span></Button>
+            </div>
+            <div className="text-sm text-gray-600 mb-2">Add, edit, or remove meals from the planner. Chefs: use this to update the menu, set ratings, add ingredients, and link recipes. Changes here affect the weekly plan and grocery list.</div>
+            {/* Search/filter input and Add meal button */}
+            {showEditor && (
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="Search by name or type..."
+                  value={mealSearch || ''}
+                  onChange={e => setMealSearch(e.target.value)}
+                  className="border rounded px-2 py-1 w-64"
+                />
+                <Button onClick={handleAddMeal}><I.Plus/> Add meal</Button>
+              </div>
+            )}
+            {/* Meals table with sorting, filtering, infer, delete, and URL validation */}
+            {showEditor && (
+              <div className="overflow-auto max-h-[320px] border rounded">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-200 text-gray-800 sticky top-0">
+                    <tr>
+                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('name')}>Meal Name {sortKey==='name' ? (sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('avg')}>Avg {sortKey==='avg' ? (sortDir==='desc' ? '▼' : '▲') : ''}</th>
+                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('type')}>Type</th>
+                      <th className="text-left p-2">Ingredients</th>
+                      <th className="text-left p-2">Recipe URL</th>
+                      <th className="text-left p-2">Rating</th>
+                      <th className="text-left p-2">Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedFilteredMeals.map((m, idx) => (
+                      <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50">
+                        <td className="p-2 text-gray-900 font-medium">
+                          <input value={m.name} onChange={e => handleEditMeal(idx, 'name', e.target.value)} className="w-full border rounded px-2 py-1" />
+                        </td>
+                        <td className="p-2">
+                          <input type="number" step="0.1" value={m.avg} onChange={e => handleEditMeal(idx, 'avg', e.target.value)} className="w-full border rounded px-2 py-1" />
+                        </td>
+                        <td className="p-2">
+                          <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(idx, 'type', e.target.value)} className="border rounded px-2 py-1">
+                            <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
+                          </select>
+                        </td>
+                        <td className="p-2 flex gap-1 items-center">
+                          <input value={m.ingredients || ''} onChange={e => handleEditMeal(idx, 'ingredients', e.target.value)} className="w-full border rounded px-2 py-1" />
+                          <Button type="button" title="Infer ingredients" onClick={() => handleInferIngredients(idx)}><I.Edit/> Infer</Button>
+                        </td>
+                        <td className="p-2">
+                          <input value={m.recipeUrl || ''} onChange={e => handleEditMeal(idx, 'recipeUrl', e.target.value)} className={`w-full border rounded px-2 py-1 ${m.recipeUrl && !isValidUrl(m.recipeUrl) ? 'border-yellow-400 bg-yellow-50' : ''}`} />
+                          {m.recipeUrl && !isValidUrl(m.recipeUrl) && <div className="text-xs text-yellow-700">URL may be invalid</div>}
+                        </td>
+                        <td className="p-2">
+                          <div className="flex gap-1">
+                            {[1,2,3,4,5].map(star => (
+                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-400' : 'text-gray-300'}`} onClick={() => handleEditMeal(idx, 'rating', star)}>★</button>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <Button type="button" title="Delete meal" onClick={() => handleDeleteMeal(idx)}><I.X/></Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {/* Sticky bottom bar for Save/Discard */}
+            {showEditor && dirtyMeals && (
+              <div className="sticky bottom-0 left-0 w-full bg-white border-t shadow flex justify-end gap-2 p-3 z-10">
+                <Button className="bg-blue-600 text-white" onClick={handleSaveMeals}><I.Edit/> Save changes</Button>
+                <Button className="bg-gray-200" onClick={handleDiscardMeals}><I.X/> Discard edits</Button>
+              </div>
+            )}
+          </Card>
+
+          {/* Cooks */}
+          <Card className="bg-blue-100 border-2 border-blue-400 shadow-lg">
+            <SectionTitle className="bg-blue-100 text-blue-900 font-extrabold p-2 rounded shadow">Cooks (Rotation & Names)</SectionTitle>
+            <div className="text-sm text-blue-900 font-semibold mb-2">Edit names below. The rotation cycles through cooks across the week grid. You can add more cooks; IDs follow A, B, C…</div>
+            <div className="space-y-2">
+              {cooks.map((c, idx) => (
+                <div key={c.id} className="flex items-center gap-2">
+                  <span className="w-8 text-sm text-gray-500">{c.id}:</span>
+                  <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-56 bg-white text-gray-900" />
+                  <select
+                    className="border rounded px-2 py-1 ml-2 text-sm bg-white text-gray-900"
+                    value={c.selectedWeek ?? 0}
+                    onChange={e => {
+                      const weekIdx = Number(e.target.value);
+                      setCooks(prev => prev.map((x, i) => i === idx ? { ...x, selectedWeek: weekIdx } : x));
+                    }}
+                  >
+                    {Array.from({ length: weeks.length }).map((_, wIdx) => (
+                      <option key={wIdx} value={wIdx}>Week {wIdx + 1}</option>
+                    ))}
+                  </select>
+                  <div className="grid grid-cols-7 gap-1 ml-2">
+                    {WEEKDAYS.map((wd, i) => {
+                      const weekIdx = c.selectedWeek ?? 0;
+                      const weekAvail = c.availabilityWeeks?.[weekIdx] || { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true };
+                      const isAvailable = weekAvail[wd] !== false;
+                      return (
+                        <button
+                          key={wd}
+                          title={`Cook is available on ${WEEKDAY_LABELS[i]}s`}
+                          aria-label={`Toggle ${WEEKDAY_LABELS[i]} availability for ${c.name} in week ${weekIdx + 1}`}
+                          className={`w-10 h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                          tabIndex={0}
+                          onClick={() => {
+                            setCooks(prev => prev.map((x, j) => {
+                              if (j !== idx) return x;
+                              const weekAvail = x.availabilityWeeks?.[weekIdx] || { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true };
+                              return {
+                                ...x,
+                                availabilityWeeks: {
+                                  ...x.availabilityWeeks,
+                                  [weekIdx]: { ...weekAvail, [wd]: !isAvailable }
+                                }
+                              };
+                            }));
+                            setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') {
+                            setCooks(prev => prev.map((x, j) => {
+                              if (j !== idx) return x;
+                              const weekAvail = x.availabilityWeeks?.[weekIdx] || { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true };
+                              return {
+                                ...x,
+                                availabilityWeeks: {
+                                  ...x.availabilityWeeks,
+                                  [weekIdx]: { ...weekAvail, [wd]: !isAvailable }
+                                }
+                              };
+                            }));
+                            setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+                          }}}
+                        >{WEEKDAY_LABELS[i][0]}</button>
+                      );
+                    })}
+                  </div>
+                  <Button disabled={cooks.length <= 1} onClick={() => removeCook(c.id)} title="Remove cook"><I.X/></Button>
+                </div>
+              ))}
+              <Button onClick={addCook}><I.Plus/> <span className="ml-1">Add cook</span></Button>
+            </div>
+          </Card>
+
+          {/* Grocery */}
+          <Card className="bg-green-50 border-2 border-green-300 shadow-md">
+            <SectionTitle className="text-green-900 font-bold bg-green-100 p-2 rounded">Grocery List (Week {activeWeek + 1})</SectionTitle>
+            <div className="text-sm text-green-900 mb-2">Aggregated from all meals shown above. Use the Grocery scope selector to download for all cooks or a single cook.</div>
+            <GroceryTable entries={currentWeekGrocery()} />
+          </Card>
+
+          {/* Controls - Upload data (relocated) */}
+          <div className="mt-8">
+            <div className="text-lg font-semibold mb-2">Manage data</div>
+            <Card>
+              <div className="mb-3 text-sm text-gray-600">
+                The app accepts a simple table with <em>Meal Name</em> & <em>Average Score</em>, or your Sheet2 format with <em>Dish</em>, voter columns, and <em>Total Score</em>. Optionally include a <em>Recipe URL</em> column.
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Upload data</label>
+                  <div className="flex gap-2">
+                    <Button onClick={() => csvInputRef.current?.click()}><I.Upload/> Upload CSV</Button>
+                    <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files && handleCSV(e.target.files[0])} />
+                    <Button onClick={() => xlsInputRef.current?.click()}><I.Upload/> Upload Excel</Button>
+                    <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => e.target.files && handleExcel(e.target.files[0])} />
                   </div>
                 </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Min avg score</label>
+                  <input type="number" step="0.1" value={threshold} onChange={(e) => setTextThreshold(Number(e.target.value) || 0)} className="w-full border rounded px-2 py-1 bg-white text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Mode</label>
+                  <div className="inline-flex rounded-xl border overflow-hidden w-full">
+                    <button className={`flex-1 px-3 py-1 text-sm ${mode === 'dinners' ? 'bg-blue-600 text-white' : 'bg-white'}`} onClick={() => setMode('dinners')}>Dinners</button>
+                    <button className={`flex-1 px-3 py-1 text-sm ${mode === 'all' ? 'bg-blue-600 text-white' : 'bg-white'}`} onClick={() => setMode('all')}>All 21</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Repeat cap (per 4 wks)</label>
+                  <input type="number" min={1} max={7} value={repeatCap} onChange={(e) => setRepeatCap(Math.max(1, Math.min(7, Number(e.target.value) || 1)))} className="w-full border rounded px-2 py-1 bg-white text-gray-900" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Start date (Mon)</label>
+                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full border rounded px-2 py-1 bg-white text-gray-900" />
+                </div>
+                <div className="lg:col-span-6 flex flex-wrap gap-2 justify-end mt-1">
+                  <div className="mr-auto flex items-center gap-2">
+                    <label className="text-xs font-medium text-gray-600">Grocery scope</label>
+                    <select value={gScope} onChange={(e) => setGScope(e.target.value)} className="border rounded px-2 py-1 bg-white text-gray-900">
+                      <option value="all">Week (all cooks)</option>
+                      {cooks.map((c) => (<option key={c.id} value={c.id}>Week by {c.name}</option>))}
+                    </select>
+                  </div>
+                  <Button onClick={() => downloadGroceryCSV(gScope === 'all' ? null : gScope)}><I.DL/> Grocery CSV</Button>
+                  <Button onClick={downloadWeekCSV}><I.List/> Week CSV</Button>
+                  <Button onClick={shuffleWeeks}><I.Shuffle/> Shuffle Plan</Button>
+                </div>
               </div>
-            ))}
+            </Card>
           </div>
-        </Card>
 
-        {/* Cooks */}
-        <Card>
-          <SectionTitle>4) Cooks (Rotation & Names)</SectionTitle>
-          <div className="text-sm text-gray-600 mb-2">Edit names below. The rotation cycles through cooks across the week grid. You can add more cooks; IDs follow A, B, C…</div>
-          <div className="space-y-2">
-            {cooks.map((c, idx) => (
-              <div key={c.id} className="flex items-center gap-2">
-                <span className="w-8 text-sm text-gray-500">{c.id}:</span>
-                <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-56 bg-white text-gray-900" />
-                <Button disabled={cooks.length <= 1} onClick={() => removeCook(c.id)} title="Remove cook"><I.X/></Button>
-              </div>
-            ))}
-            <Button onClick={addCook}><I.Plus/> <span className="ml-1">Add cook</span></Button>
-          </div>
-        </Card>
-
-        {/* Grocery */}
-        <Card>
-          <SectionTitle>5) Grocery List (Week {activeWeek + 1})</SectionTitle>
-          <div className="text-sm text-gray-600 mb-2">Aggregated from all meals shown above. Use the Grocery scope selector to download for all cooks or a single cook.</div>
-          <GroceryTable entries={currentWeekGrocery()} />
-        </Card>
-
-        <footer className="text-xs text-gray-500 text-center pb-8">Tip: Save a copy as PDF using the Print button. Use the seed to reproduce a favorite shuffle later.</footer>
-      </div>
-
-      {/* Recipe Modal */}
-      {recipeModal.open && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setRecipeModal({ open: false, meal: null })}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-[92%] p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="text-lg font-semibold">{recipeModal.meal?.name}</h3>
-              <button className="text-gray-500" onClick={() => setRecipeModal({ open: false, meal: null })}><I.X/></button>
+          {/* Export to Calendar */}
+          <Card>
+            <SectionTitle>Export to Calendar</SectionTitle>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-sm font-medium text-gray-700">Select weeks to export:</label>
+              <select multiple className="border rounded px-2 py-1 text-sm bg-white text-gray-900" value={exportWeeks} onChange={e => setExportWeeks(Array.from(e.target.selectedOptions, o => Number(o.value)))}>
+                {weeks.map((_, wIdx) => (
+                  <option key={wIdx} value={wIdx}>Week {wIdx + 1}</option>
+                ))}
+              </select>
+              <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Selected Weeks (.ics)</span></Button>
             </div>
-            <div className="text-sm text-gray-600 mb-3">Ingredients (editable in the table above):</div>
-            <div className="text-sm bg-gray-50 border rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
-            <div className="flex flex-wrap items-center gap-3">
-              {!!recipeModal.meal?.recipeUrl && (<a className="underline" target="_blank" rel="noreferrer" href={recipeModal.meal?.recipeUrl}><I.Link/> Open saved recipe</a>)}
-              <a className="underline" target="_blank" rel="noreferrer" href={`https://www.google.com/search?q=${encodeURIComponent((recipeModal.meal?.name || '') + ' low sodium recipe')}`}>Search web recipes</a>
-              <a className="underline" target="_blank" rel="noreferrer" href={`https://www.google.com/search?q=${encodeURIComponent((recipeModal.meal?.name || '') + ' recipe site:eatingwell.com OR site:heart.org OR site:mayoclinic.org')}`}>Healthy sources</a>
-            </div>
-          </div>
+          </Card>
+
+          {/* Inline styles for readability and color accents */}
+          <style>{`
+            .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+            .meal-title:hover{text-decoration:underline}
+            .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
+            .day-card{position:relative}
+            .cookA.day-card{border-left:6px solid #2563eb}
+            .cookB.day-card{border-left:6px solid #7c3aed}
+            .cookDefault.day-card{border-left:6px solid #14b8a6}
+            .cookA .day-body{background:#eff6ff}
+            .cookB .day-body{background:#f5f3ff}
+            .cookDefault .day-body{background:#ecfdf5}
+            .cookA .meal-title{border-color:#bfdbfe}
+            .cookB .meal-title{border-color:#ddd6fe}
+            .cookDefault .meal-title{border-color:#cfe9d5}
+            @media print { header { display:none !important } body { background:white } }
+          `}</style>
         </div>
-      )}
 
-      {/* Inline styles for readability and color accents */}
-      <style>{`
-        .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
-        .meal-title:hover{text-decoration:underline}
-        .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
-        .day-card{position:relative}
-        .cookA.day-card{border-left:6px solid #2563eb}
-        .cookB.day-card{border-left:6px solid #7c3aed}
-        .cookDefault.day-card{border-left:6px solid #14b8a6}
-        .cookA .day-body{background:#eff6ff}
-        .cookB .day-body{background:#f5f3ff}
-        .cookDefault .day-body{background:#ecfdf5}
-        .cookA .meal-title{border-color:#bfdbfe}
-        .cookB .meal-title{border-color:#ddd6fe}
-        .cookDefault .meal-title{border-color:#cfe9d5}
-        @media print { header { display:none !important } body { background:white } }
-      `}</style>
-    </div>
+        {/* Recipe Modal */}
+        {recipeModal.open && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setRecipeModal({ open: false, meal: null })}>
+            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-[92%] p-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-lg font-semibold">{recipeModal.meal?.name}</h3>
+                <button className="text-gray-500" onClick={() => setRecipeModal({ open: false, meal: null })}><I.X/></button>
+              </div>
+              <div className="text-sm text-gray-600 mb-3">Ingredients (editable in the table above):</div>
+              <div className="text-sm bg-gray-50 border rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
+              {/* Editable recipe URL */}
+              <form
+                className="mb-3 flex gap-2 items-center"
+                onSubmit={e => {
+                  e.preventDefault();
+                  const url = e.target.recipeUrl.value.trim();
+                  // Update weeks (scheduled instance)
+                  setWeeks(prev => {
+                    const updated = prev.map((week, wIdx) =>
+                      wIdx === activeWeek
+                        ? week.map((day, dIdx) =>
+                            dIdx === recipeModal.dayIndex && day.d
+                              ? { ...day, d: { ...day.d, recipeUrl: url } }
+                              : day
+                          )
+                        : week
+                    );
+                    setTimeout(triggerAutosave, 0);
+                    return updated;
+                  });
+                  // Update meals table if meal with same name exists
+                  if (recipeModal.meal?.name) {
+                    setMeals(prev => {
+                      const updated = prev.map(m =>
+                        m.name === recipeModal.meal.name ? { ...m, recipeUrl: url } : m
+                      );
+                      setTimeout(triggerAutosave, 0);
+                      return updated;
+                    });
+                  }
+                  // Update modal
+                  setRecipeModal(modal => ({ ...modal, meal: { ...modal.meal, recipeUrl: url } }));
+                }}
+              >
+                <input
+                  name="recipeUrl"
+                  type="url"
+                  defaultValue={recipeModal.meal?.recipeUrl || ''}
+                  placeholder="https://..."
+                  className="border rounded px-2 py-1 w-full"
+                  style={{ minWidth: 0 }}
+                />
+                <Button type="submit" className="bg-blue-600 text-white px-3 py-1">Save</Button>
+              </form>
+              <div className="flex flex-wrap items-center gap-3">
+                {!!recipeModal.meal?.recipeUrl && (<a className="underline" target="_blank" rel="noreferrer" href={recipeModal.meal?.recipeUrl}><I.Link/> Open saved recipe</a>)}
+                <a className="underline" target="_blank" rel="noreferrer" href={`https://www.google.com/search?q=${encodeURIComponent((recipeModal.meal?.name || '') + ' low sodium recipe')}`}>Search web recipes</a>
+                <a className="underline" target="_blank" rel="noreferrer" href={`https://www.google.com/search?q=${encodeURIComponent((recipeModal.meal?.name || '') + ' recipe site:eatingwell.com OR site:heart.org OR site:mayoclinic.org')}`}>Healthy sources</a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Inline styles for readability and color accents */}
+        <style>{`
+          .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+          .meal-title:hover{text-decoration:underline}
+          .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
+          .day-card{position:relative}
+          .cookA.day-card{border-left:6px solid #2563eb}
+          .cookB.day-card{border-left:6px solid #7c3aed}
+          .cookDefault.day-card{border-left:6px solid #14b8a6}
+          .cookA .day-body{background:#eff6ff}
+          .cookB .day-body{background:#f5f3ff}
+          .cookDefault .day-body{background:#ecfdf5}
+          .cookA .meal-title{border-color:#bfdbfe}
+          .cookB .meal-title{border-color:#ddd6fe}
+          .cookDefault .meal-title{border-color:#cfe9d5}
+          @media print { header { display:none !important } body { background:white } }
+        `}</style>
+      </div>
+    </ErrorBoundary>
   );
 }
 
@@ -636,4 +1040,63 @@ function GroceryTable({ entries }) {
       ))}
     </div>
   );
+}
+
+const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+// Simple error boundary for React function components
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error, info) {
+    // Optionally log error/info
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="p-8 text-center text-red-700 bg-red-50 border border-red-300 rounded-xl">
+          <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
+          <pre className="text-sm whitespace-pre-wrap">{String(this.state.error)}</pre>
+          <button className="mt-4 px-4 py-2 bg-gray-200 rounded" onClick={() => window.location.reload()}>Reload</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+// Patch for function components
+function withErrorBoundary(Component) {
+  return function Wrapper(props) {
+    const [error, setError] = useState(null);
+    try {
+      if (error) throw error;
+      return <Component {...props} />;
+    } catch (e) {
+      setError(e);
+      return <ErrorBoundary>{null}</ErrorBoundary>;
+    }
+  };
+}
+
+// Self-tests for constraints
+function testMealPlanConstraints(weeks, maxRepeat) {
+  const counts = {};
+  let adjacencyViolations = 0;
+  for (let w = 0; w < weeks.length; w++) {
+    for (let d = 0; d < weeks[w].length; d++) {
+      const meal = weeks[w][d].d?.name;
+      if (!meal) continue;
+      counts[meal] = (counts[meal] || 0) + 1;
+      if (d > 0 && weeks[w][d - 1].d?.name === meal) adjacencyViolations++;
+    }
+  }
+  const overRepeat = Object.values(counts).filter(c => c > maxRepeat);
+  console.assert(overRepeat.length === 0, "No meal should repeat more than cap", overRepeat);
+  console.assert(adjacencyViolations < 4, "Adjacency should be rare", adjacencyViolations);
 }
