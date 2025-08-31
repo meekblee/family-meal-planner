@@ -1,10 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+<<<<<<< HEAD
 import { loadPersisted, savePersisted, hasRemote } from "./persist";
+=======
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
 
 // =============== Minimal UI atoms (no extra props) ===============
 const Button = ({ className = "", children, ...props }) => (
   <button
+<<<<<<< HEAD
     className={`px-3 py-2 rounded-2xl shadow-sm border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 hover:shadow transition disabled:opacity-50 ${className}`}
+=======
+    className={`px-3 py-2 rounded-2xl shadow-sm border border-gray-200 hover:shadow transition disabled:opacity-50 ${className}`}
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
     {...props}
   >
     {children}
@@ -16,7 +23,11 @@ const Card = ({ className = "", children }) => (
 const SectionTitle = ({ children }) => (
   <h2 className="text-xl font-extrabold tracking-tight mb-2 text-gray-900">{children}</h2>
 );
+<<<<<<< HEAD
 const I_OLD = {
+=======
+const I = {
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   Cal: () => <span aria-hidden>📅</span>,
   DL: () => <span aria-hidden>⬇️</span>,
   List: () => <span aria-hidden>🧾</span>,
@@ -29,6 +40,7 @@ const I_OLD = {
   Edit: () => <span aria-hidden>✏️</span>,
 };
 
+<<<<<<< HEAD
 // Inline SVG icon set (no external deps)
 const IconBase = ({ children, className = "", title }) => (
   <svg
@@ -121,6 +133,8 @@ const I = {
   ),
 };
 
+=======
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
 // =============== Utilities ===============
 function rngFactory(seedStr) {
   let h = 0x811c9dc5;
@@ -271,6 +285,7 @@ const DEFAULTS = {
     { id: "B", name: "Sharon", availability: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true }, availabilityWeeks: {} }
   ],
 };
+<<<<<<< HEAD
 // Stacey (A) back to blue hue
 const COOK_COLORS = {
   A: { chip: "bg-blue-100 text-blue-800 border-blue-200", text: "text-blue-700", border: "border-blue-300" },
@@ -299,6 +314,15 @@ const cookClass = (id) => {
   return "cookDefault";
 };
 const cookHeaderClass = (id) => COOK_HEADER[id] || COOK_HEADER.default;
+=======
+const COOK_COLORS = {
+  A: { chip: "bg-blue-100 text-blue-800 border-blue-200", text: "text-blue-700", border: "border-blue-300" },
+  B: { chip: "bg-purple-100 text-purple-800 border-purple-200", text: "text-purple-700", border: "border-purple-300" },
+  default: { chip: "bg-teal-100 text-teal-800 border-teal-200", text: "text-teal-700", border: "border-teal-300" },
+};
+const cookStyle = (id) => COOK_COLORS[id] || COOK_COLORS.default;
+const cookClass = (id) => (id === "A" ? "cookA" : id === "B" ? "cookB" : "cookDefault");
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
 
 // =============== App ===============
 export default function MealPlannerApp() {
@@ -314,15 +338,20 @@ export default function MealPlannerApp() {
   const [gScope, setGScope] = useState("all");
   const [showEditor, setShowEditor] = useState(false);
   const [recipeModal, setRecipeModal] = useState({ open: false, meal: null });
+<<<<<<< HEAD
   const [addModal, setAddModal] = useState({ open: false, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } });
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
+=======
+  const [showSavedToast, setShowSavedToast] = useState(false);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   const [exportWeeks, setExportWeeks] = useState([]);
 
   const csvInputRef = useRef(null);
   const xlsInputRef = useRef(null);
   const autosaveDebounceRef = useRef();
   const didPromptRestoreRef = useRef(false);
+<<<<<<< HEAD
   const [nowTs, setNowTs] = useState(Date.now());
 
   const cookName = (id) => cooks.find((c) => c.id === id)?.name || id;
@@ -331,6 +360,10 @@ export default function MealPlannerApp() {
     const id = setInterval(() => setNowTs(Date.now()), 15000);
     return () => clearInterval(id);
   }, []);
+=======
+
+  const cookName = (id) => cooks.find((c) => c.id === id)?.name || id;
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
 
   // Sample data so UI isn't empty
   useEffect(() => {
@@ -347,7 +380,11 @@ export default function MealPlannerApp() {
       { name: "Chicken and wild rice casserole, green beans", avg: 7.1 },
       { name: "Minestrone soup (low-sodium), whole-grain bread", avg: 7.1 },
     ].map((m) => ({ ...m, type: inferMealType(m.name), ingredients: ingredientHeuristics(m.name), recipeUrl: "" }));
+<<<<<<< HEAD
     setMeals(ensureIds(sample));
+=======
+    setMeals(sample);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   }, [meals.length]);
 
   const filteredMeals = useMemo(() => meals.filter((m) => (Number(m.avg) || 0) >= threshold), [meals, threshold]);
@@ -363,7 +400,11 @@ export default function MealPlannerApp() {
           const rows = res.data || [];
           const parsed = parseUploadedRows(rows);
           if (!parsed.length) return alert("Could not detect meal data in CSV.");
+<<<<<<< HEAD
           setMeals(ensureIds(parsed));
+=======
+          setMeals(parsed);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
         },
       });
     } catch (e) {
@@ -376,6 +417,7 @@ export default function MealPlannerApp() {
       const XLSX = (await import("xlsx")).default;
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
+<<<<<<< HEAD
       // Pick the first sheet that yields recognizable meal rows; fallback to the one with most parsed rows
       let best = { name: null, rows: [], parsed: [] };
       for (const name of wb.SheetNames) {
@@ -395,6 +437,14 @@ export default function MealPlannerApp() {
       if (!parsed.length) return alert("Could not detect meal data in Excel sheet.");
       setMeals(ensureIds(parsed));
       alert(`Imported ${parsed.length} meals from Excel`);
+=======
+      const sheetName = wb.SheetNames.find((n) => n.toLowerCase().includes("sheet2")) || wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      const parsed = parseUploadedRows(rows);
+      if (!parsed.length) return alert("Could not detect meal data in Excel sheet.");
+      setMeals(parsed);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
     } catch (e) {
       console.warn("Excel parser not available", e);
       alert("Excel parser not available here. Try CSV instead.");
@@ -404,12 +454,18 @@ export default function MealPlannerApp() {
   function parseUploadedRows(rows) {
     const out = [];
     for (const r of rows || []) {
+<<<<<<< HEAD
       // Normalize headers by trimming and lowering keys
       const norm = {};
       Object.keys(r || {}).forEach(k => norm[String(k).trim().toLowerCase()] = r[k]);
       const name = norm["meal name"] || norm["name"] || norm["dish"] || r["Meal Name"] || r["name"] || r["Dish"] || r["dish"];
       if (!name) continue;
       let avg = Number(norm["average score"] ?? norm["avg"] ?? norm["rating"] ?? r["Average Score"] ?? r["Avg"] ?? r["Rating"]);
+=======
+      const name = r["Meal Name"] || r["name"] || r["Dish"] || r["dish"];
+      if (!name) continue;
+      let avg = Number(r["Average Score"]);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
       if (!avg || isNaN(avg)) {
         const keys = Object.keys(r);
         const voteKeys = keys.filter((k) => k !== "Dish" && k !== "Total Score" && k !== "Meal Name" && (/^.*@.*\..*$/.test(k) || /score/i.test(k)));
@@ -417,19 +473,32 @@ export default function MealPlannerApp() {
         if (votes.length) avg = votes.reduce((a, b) => a + b, 0) / votes.length;
         else if (Number(r["Total Score"])) avg = Number(r["Total Score"]) / 6; else avg = 3;
       }
+<<<<<<< HEAD
       const type = norm["meal type"] || r["Meal Type"] || inferMealType(name);
       const ingredients = norm["ingredients"] || r["Ingredients"] || ingredientHeuristics(name);
       const recipeUrl = norm["recipe url"] || norm["recipe"] || norm["url"] || r["Recipe URL"] || r["Recipe"] || r["URL"] || "";
+=======
+      const type = r["Meal Type"] || inferMealType(name);
+      const ingredients = r["Ingredients"] || ingredientHeuristics(name);
+      const recipeUrl = r["Recipe URL"] || r["Recipe"] || r["URL"] || "";
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
       out.push({ name: String(name).trim(), avg: Number(avg), type, ingredients, recipeUrl: String(recipeUrl || "").trim() });
     }
     return out;
   }
 
   // Planning
+<<<<<<< HEAD
 function generateEmptyWeeks() {
   const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   return Array.from({ length: 4 }, () => labels.map((l, i) => ({ label: l, weekday: WEEKDAYS[i] })));
 }
+=======
+  function generateEmptyWeeks() {
+    const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    return Array.from({ length: 4 }, () => labels.map((l) => ({ label: l })));
+  }
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   function generateWithConstraints(pool, { dinnersOnly = DEFAULTS.dinnersOnly, seed = "", maxRepeatAcross4Weeks = DEFAULTS.maxRepeatAcross4Weeks, cookIds = ["A", "B"], cooksList = cooks }) {
     const rng = rngFactory(seed || "default");
     const weeksLocal = generateEmptyWeeks();
@@ -471,10 +540,17 @@ function generateEmptyWeeks() {
         // Cook assignment with availability
         const weekdayKey = weeksLocal[w][d].weekday;
         // Only include cooks available for this week and day
+<<<<<<< HEAD
         const availableCooks = cooksList.filter(c => {
           const weekAvail = c.availabilityWeeks && c.availabilityWeeks[w] ? c.availabilityWeeks[w] : c.availability;
           return weekAvail && weekAvail[weekdayKey] !== false;
         });
+=======
+        const availableCooks = cooksList.filter(c =>
+          (c.availabilityWeeks ? c.availabilityWeeks[w] !== false : true) &&
+          c.availability && c.availability[weekdayKey]
+        );
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
         const ids = availableCooks.length ? availableCooks.map(c => c.id) : cooksList.map(c => c.id);
         weeksLocal[w][d].cook = ids[(d + w) % ids.length];
         // ...existing code for breakfast/lunch if needed...
@@ -482,6 +558,7 @@ function generateEmptyWeeks() {
     }
     return weeksLocal;
   }
+<<<<<<< HEAD
   function assignDatesToWeeks(weeksIn, startDateStr, hour = DEFAULTS.dinnerHour, minutes = DEFAULTS.dinnerMinutes) {
     try {
       const base = new Date(startDateStr);
@@ -499,12 +576,18 @@ function generateEmptyWeeks() {
       return weeksIn;
     }
   }
+=======
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   function fillWeeks({ dinnersOnly = DEFAULTS.dinnersOnly } = {}) {
     const pool = [...filteredMeals];
     if (!pool.length) return alert("No meals available above threshold.");
     const ids = cooks.map((c) => c.id);
     const filled = generateWithConstraints(pool, { dinnersOnly, seed, maxRepeatAcross4Weeks: repeatCap, cookIds: ids.length ? ids : ["A"] });
+<<<<<<< HEAD
     setWeeks(assignDatesToWeeks(filled, startDate));
+=======
+    setWeeks(filled);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   }
   function shuffleWeeks() { fillWeeks({ dinnersOnly: mode === "dinners" }); }
 
@@ -531,6 +614,7 @@ function generateEmptyWeeks() {
     const urlPart = dinner?.recipeUrl ? `\nRecipe: ${dinner.recipeUrl}` : '';
     return base + urlPart;
   }
+<<<<<<< HEAD
   // Helpers for cook assignment adjustments
   function availableCookIdsFor(weekIndex, dayIndex) {
     const weekdayKey = WEEKDAYS[dayIndex % 7];
@@ -569,6 +653,8 @@ function generateEmptyWeeks() {
     });
     setTimeout(triggerAutosave, 0);
   }
+=======
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   function downloadICS() {
     const selectedWeeks = exportWeeks.length ? exportWeeks : weeks.map((_, i) => i);
     const events = [];
@@ -603,6 +689,7 @@ function generateEmptyWeeks() {
 
   // Auto-fill once after meals load / cooks change
   useEffect(() => { if (!weeks[0][0].d) fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); }, [meals.length, repeatCap, cooks.length]);
+<<<<<<< HEAD
   // Update dates when startDate changes
   useEffect(() => {
     setWeeks(prev => assignDatesToWeeks(prev, startDate));
@@ -611,6 +698,12 @@ function generateEmptyWeeks() {
   // === AUTOSAVE HELPERS ===
   const AUTOSAVE_KEY = "familyMealPlannerAutosave"; // kept for reference in UI only
   async function saveAutosave(state) {
+=======
+
+  // === AUTOSAVE HELPERS ===
+  const AUTOSAVE_KEY = "familyMealPlannerAutosave";
+  function saveAutosave(state) {
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
     const minimal = {
       meals: state.meals,
       weeks: state.weeks,
@@ -622,33 +715,61 @@ function generateEmptyWeeks() {
       seed: state.seed,
     };
     try {
+<<<<<<< HEAD
       await savePersisted(minimal);
       setLastSavedAt(Date.now());
+=======
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(minimal));
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
       setShowSavedToast(true);
       setTimeout(() => setShowSavedToast(false), 1200);
     } catch {}
   }
+<<<<<<< HEAD
   async function loadAutosave() {
     try { return await loadPersisted(); } catch { return null; }
+=======
+  function loadAutosave() {
+    try {
+      const raw = localStorage.getItem(AUTOSAVE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch { return null; }
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   }
 
   // Prompt to restore autosave on first mount
   useEffect(() => {
     if (didPromptRestoreRef.current) return;
+<<<<<<< HEAD
     didPromptRestoreRef.current = true;
     (async () => {
       const saved = await loadAutosave();
       if (saved) {
+=======
+    const saved = loadAutosave();
+    if (saved) {
+      didPromptRestoreRef.current = true;
+      if (window.confirm("Restore previous autosave?")) {
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
         setMeals(saved.meals || []);
         setWeeks(saved.weeks || generateEmptyWeeks());
         setCooks(saved.cooks || DEFAULTS.cooks);
         setStartDate(saved.startDate || STARTING_DEFAULT());
         setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
+<<<<<<< HEAD
         setTextThreshold(saved.threshold ?? 3);
         setMode(saved.mode || "dinners");
         setSeed(saved.seed || "");
       }
     })();
+=======
+        setThreshold(saved.threshold ?? 3);
+        setMode(saved.mode || "dinners");
+        setSeed(saved.seed || "");
+      }
+    }
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   }, []);
   // Debounced autosave on relevant state changes
   useEffect(() => {
@@ -662,6 +783,7 @@ function generateEmptyWeeks() {
   function triggerAutosave() {
     saveAutosave({ meals, weeks, cooks, startDate, repeatCap, threshold, mode, seed });
   }
+<<<<<<< HEAD
   function savedLabel(ts) {
     if (!ts) return '';
     const secs = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -672,6 +794,8 @@ function generateEmptyWeeks() {
     const hrs = Math.floor(mins / 60);
     return `${hrs}h ago`;
   }
+=======
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
 
   // Cook list mgmt
   function addCook() {
@@ -686,12 +810,19 @@ function generateEmptyWeeks() {
           availabilityWeeks: { 0: { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true } },
         },
       ];
+<<<<<<< HEAD
       return updated;
     });
     setTimeout(() => {
       fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly });
       setTimeout(triggerAutosave, 100);
     }, 0);
+=======
+      setTimeout(triggerAutosave, 0);
+      return updated;
+    });
+    setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
   }
   function removeCook(id) {
     if (cooks.length <= 1) return;
@@ -716,6 +847,7 @@ function generateEmptyWeeks() {
   }, []);
 
   const [mealSearch, setMealSearch] = useState("");
+<<<<<<< HEAD
   // Meals Editor state (moved up to avoid TDZ when showEditor is true)
   const [localMeals, setLocalMeals] = useState(meals);
   const [dirtyMeals, setDirtyMeals] = useState(false);
@@ -744,12 +876,22 @@ function generateEmptyWeeks() {
       try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
       return updated;
     });
+=======
+  // 1. Add missing Meals Editor handlers and sortedFilteredMeals
+  function handleEditMeal(idx, key, value) {
+    setMeals(prev => prev.map((m, i) => i === idx ? { ...m, [key]: value } : m));
+    setDirtyMeals(true);
+  }
+  function handleInferIngredients(idx) {
+    setMeals(prev => prev.map((m, i) => i === idx ? { ...m, ingredients: ingredientHeuristics(m.name) } : m));
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
     setDirtyMeals(true);
   }
   function handleSort(key) {
     setSortKey(key);
     setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
   }
+<<<<<<< HEAD
   function handleDeleteMeal(idOrIdx) {
     setLocalMeals(prev => {
       const updated = prev.filter((m, i) => !(m._id === idOrIdx || i === idOrIdx));
@@ -813,6 +955,24 @@ function generateEmptyWeeks() {
   const [isMobile, setIsMobile] = useState(false);
   const sourceMeals = showEditor ? localMeals : meals;
   const sortedFilteredMeals = sourceMeals
+=======
+  function handleDeleteMeal(idx) {
+    setMeals(prev => prev.filter((_, i) => i !== idx));
+    setDirtyMeals(true);
+  }
+  function handleSaveMeals() {
+    setDirtyMeals(false);
+    setShowSavedToast(true);
+    setTimeout(() => setShowSavedToast(false), 2000);
+  }
+  function handleDiscardMeals() {
+    setMeals(localMeals);
+    setDirtyMeals(false);
+  }
+  const [sortKey, setSortKey] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+  const sortedFilteredMeals = meals
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
     .filter(m => m.name.toLowerCase().includes(mealSearch.toLowerCase()) || (m.type && m.type.toLowerCase().includes(mealSearch.toLowerCase())))
     .sort((a, b) => {
       if (!sortKey) return 0;
@@ -822,6 +982,7 @@ function generateEmptyWeeks() {
 
   // Meals Editor state fixes
 
+<<<<<<< HEAD
   // When meals change, ensure IDs and update localMeals for discard
   useEffect(() => { setLocalMeals(ensureIds(meals)); }, [meals]);
 
@@ -833,10 +994,19 @@ function generateEmptyWeeks() {
     if (mq.addEventListener) mq.addEventListener('change', cb); else mq.addListener(cb);
     return () => { if (mq.removeEventListener) mq.removeEventListener('change', cb); else mq.removeListener(cb); };
   }, []);
+=======
+  // Meals Editor state
+  const [localMeals, setLocalMeals] = useState(meals);
+  const [dirtyMeals, setDirtyMeals] = useState(false);
+
+  // When meals change, update localMeals for discard
+  useEffect(() => { setLocalMeals(meals); }, [meals]);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
 
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 p-4">
+<<<<<<< HEAD
   <div className="max-w-7xl mx-auto space-y-6 w-full px-2 md:px-0">
           {/* Header */}
           <header className="app-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 w-full px-2 md:px-0">
@@ -856,29 +1026,58 @@ function generateEmptyWeeks() {
                   <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">Saved {savedLabel(lastSavedAt)}</span>
                 )}
               </div>
+=======
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header */}
+          <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">Family Meal Planner</h1>
+              <p className="text-sm md:text-base text-gray-600">
+                4-week rotation • dinners at 6:00 PM • {cooks.map(c => c.name).join(' & ')}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button className="bg-gray-900 text-white hover:opacity-90" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
+              <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
             </div>
           </header>
 
           {/* Planner */}
+<<<<<<< HEAD
           <Card className="w-full max-w-md md:max-w-3xl mx-auto px-2 md:px-6">
             <SectionTitle>4-Week Plan</SectionTitle>
             <div className="week-row flex flex-wrap items-center gap-2 mb-3 w-full">
               <div className="flex items-center gap-2 w-full">
                 <span className="text-sm font-medium mr-2">View week:</span>
                 <div className="week-scroll rounded-xl border bg-white w-full md:w-auto" style={{ overflowX: 'auto' }}>
+=======
+          <Card>
+            <SectionTitle>4-Week Plan</SectionTitle>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium mr-2">View week:</span>
+                <div className="inline-flex rounded-xl border overflow-hidden bg-white">
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                   {Array.from({ length: 4 }).map((_, i) => (
                     <button
                       key={i}
                       aria-label={`Switch to Week ${i + 1}`}
                       title={`Show Week ${i + 1} plan`}
+<<<<<<< HEAD
                       className={`week-btn px-4 py-2 text-base font-semibold min-h-[44px] focus:outline-none transition ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} rounded-xl mr-2`}
                       style={{ minWidth: 88, flex: '0 0 auto' }}
+=======
+                      className={`px-6 py-2 text-sm focus:outline-none transition border-r last:border-r-0 font-semibold ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} ${i === 0 ? 'rounded-l-xl' : ''} ${i === 3 ? 'rounded-r-xl' : ''}`}
+                      style={{ minWidth: 80 }}
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                       onClick={() => setActiveWeek(i)}
                     >Week {i + 1}</button>
                   ))}
                 </div>
               </div>
               {/* Start date and Repeat cap chips */}
+<<<<<<< HEAD
               <div className="chips ml-4 flex gap-2 items-center">
                 <span className="px-3 py-2 rounded bg-sky-50 border border-sky-300 text-sm font-semibold text-sky-900 shadow-sm" style={{ minWidth: 120 }}>
                   Start date: <span className="font-bold">{startDate}</span>
@@ -889,12 +1088,22 @@ function generateEmptyWeeks() {
                 <span className="ml-auto px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-semibold">
                   {filteredMeals.length} of {meals.length} meals available
                 </span>
+=======
+              <div className="ml-4 flex gap-2 items-center">
+                <span className="px-3 py-2 rounded bg-blue-50 border border-blue-300 text-sm font-semibold text-blue-900 shadow-sm" style={{ minWidth: 120 }}>
+                  Start date: <span className="font-bold">{startDate}</span>
+                </span>
+                <span className="px-3 py-2 rounded bg-blue-50 border border-blue-300 text-sm font-semibold text-blue-900 shadow-sm" style={{ minWidth: 120 }}>
+                  Repeat cap: <span className="font-bold">{repeatCap}</span>
+                </span>
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {weeks[activeWeek].map((day, idx) => (
                   <div key={idx} className={`day-card rounded-2xl border border-gray-200 overflow-hidden ${cookClass(day.cook)}`}>
+<<<<<<< HEAD
                     <div className={`${cookHeaderClass(day.cook)} px-3 py-2 flex justify-between items-center`}> 
                       <div className="font-semibold">{day.label}</div>
                       <div className="flex items-center gap-2">
@@ -938,6 +1147,27 @@ function generateEmptyWeeks() {
                       )}
                       <div className="rounded-lg p-2 day-body">
                         <div className="flex items-center gap-2"><span className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-indigo-600 text-white">Dinner</span>
+=======
+                    <div className="bg-gray-50 px-3 py-2 flex justify-between items-center">
+                      <div className="font-semibold text-gray-900">{day.label}</div>
+                      <span className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}>{cookName(day.cook)}</span>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      {mode === 'all' && (
+                        <div className="bg-yellow-50 rounded-lg p-2">
+                          <div className="text-xs text-gray-600">Breakfast</div>
+                          <div className="font-medium">{(day.b && day.b.name) || '—'}</div>
+                        </div>
+                      )}
+                      {mode === 'all' && (
+                        <div className="bg-blue-50 rounded-lg p-2">
+                          <div className="text-xs text-gray-600">Lunch</div>
+                          <div className="font-medium">{(day.l && day.l.name) || '—'}</div>
+                        </div>
+                      )}
+                      <div className="rounded-lg p-2 day-body">
+                        <div className="text-xs text-gray-600 flex items-center gap-2">Dinner
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                           <button
                             className="ml-2 px-2 py-1 rounded hover:bg-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                             title="Edit or Replace Dinner"
@@ -1009,6 +1239,7 @@ function generateEmptyWeeks() {
                   placeholder="Search by name or type..."
                   value={mealSearch || ''}
                   onChange={e => setMealSearch(e.target.value)}
+<<<<<<< HEAD
                   className="border rounded-xl px-3 py-2 w-full sm:w-64 shadow-sm bg-white text-gray-900 focus:ring-2 focus:ring-sky-500"
                 />
                 <Button className="bg-sky-500 text-white hover:bg-sky-600" onClick={() => setAddModal({ open: true, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } })}><I.Plus/> Add meal</Button>
@@ -1065,10 +1296,31 @@ function generateEmptyWeeks() {
                       <th className="text-left p-3 font-semibold">Recipe</th>
                       <th className="text-left p-3 font-semibold">Rating</th>
                       <th className="text-left p-3 font-semibold">Delete</th>
+=======
+                  className="border rounded px-2 py-1 w-64"
+                />
+                <Button onClick={handleAddMeal}><I.Plus/> Add meal</Button>
+              </div>
+            )}
+            {/* Meals table with sorting, filtering, infer, delete, and URL validation */}
+            {showEditor && (
+              <div className="overflow-auto max-h-[320px] border rounded">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-200 text-gray-800 sticky top-0">
+                    <tr>
+                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('name')}>Meal Name {sortKey==='name' ? (sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('avg')}>Avg {sortKey==='avg' ? (sortDir==='desc' ? '▼' : '▲') : ''}</th>
+                      <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('type')}>Type</th>
+                      <th className="text-left p-2">Ingredients</th>
+                      <th className="text-left p-2">Recipe URL</th>
+                      <th className="text-left p-2">Rating</th>
+                      <th className="text-left p-2">Delete</th>
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                     </tr>
                   </thead>
                   <tbody>
                     {sortedFilteredMeals.map((m, idx) => (
+<<<<<<< HEAD
                       <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50 hover:bg-sky-50/60">
                         <td className="p-3 text-gray-900 font-medium min-w-[320px] lg:min-w-[380px]">
                           <input value={m.name} placeholder="e.g., Turkey chili (low-sodium)" onChange={e => handleEditMeal(m._id, 'name', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
@@ -1106,6 +1358,37 @@ function generateEmptyWeeks() {
                         </td>
                         <td className="p-3">
                           <Button type="button" className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" title="Delete meal" onClick={() => handleDeleteMeal(m._id)}><I.X/></Button>
+=======
+                      <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50">
+                        <td className="p-2 text-gray-900 font-medium">
+                          <input value={m.name} onChange={e => handleEditMeal(idx, 'name', e.target.value)} className="w-full border rounded px-2 py-1" />
+                        </td>
+                        <td className="p-2">
+                          <input type="number" step="0.1" value={m.avg} onChange={e => handleEditMeal(idx, 'avg', e.target.value)} className="w-full border rounded px-2 py-1" />
+                        </td>
+                        <td className="p-2">
+                          <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(idx, 'type', e.target.value)} className="border rounded px-2 py-1">
+                            <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
+                          </select>
+                        </td>
+                        <td className="p-2 flex gap-1 items-center">
+                          <input value={m.ingredients || ''} onChange={e => handleEditMeal(idx, 'ingredients', e.target.value)} className="w-full border rounded px-2 py-1" />
+                          <Button type="button" title="Infer ingredients" onClick={() => handleInferIngredients(idx)}><I.Edit/> Infer</Button>
+                        </td>
+                        <td className="p-2">
+                          <input value={m.recipeUrl || ''} onChange={e => handleEditMeal(idx, 'recipeUrl', e.target.value)} className={`w-full border rounded px-2 py-1 ${m.recipeUrl && !isValidUrl(m.recipeUrl) ? 'border-yellow-400 bg-yellow-50' : ''}`} />
+                          {m.recipeUrl && !isValidUrl(m.recipeUrl) && <div className="text-xs text-yellow-700">URL may be invalid</div>}
+                        </td>
+                        <td className="p-2">
+                          <div className="flex gap-1">
+                            {[1,2,3,4,5].map(star => (
+                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-400' : 'text-gray-300'}`} onClick={() => handleEditMeal(idx, 'rating', star)}>★</button>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <Button type="button" title="Delete meal" onClick={() => handleDeleteMeal(idx)}><I.X/></Button>
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                         </td>
                       </tr>
                     ))}
@@ -1115,9 +1398,15 @@ function generateEmptyWeeks() {
             )}
             {/* Sticky bottom bar for Save/Discard */}
             {showEditor && dirtyMeals && (
+<<<<<<< HEAD
               <div className="sticky bottom-0 left-0 w-full bg-blue-700 text-white shadow flex justify-end gap-2 p-3 z-10">
                 <Button className="bg-blue-600 text-white" onClick={handleSaveMeals}><I.Edit/> Save changes</Button>
                 <Button className="bg-white text-blue-700" onClick={handleDiscardMeals}><I.X/> Discard edits</Button>
+=======
+              <div className="sticky bottom-0 left-0 w-full bg-white border-t shadow flex justify-end gap-2 p-3 z-10">
+                <Button className="bg-blue-600 text-white" onClick={handleSaveMeals}><I.Edit/> Save changes</Button>
+                <Button className="bg-gray-200" onClick={handleDiscardMeals}><I.X/> Discard edits</Button>
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
               </div>
             )}
           </Card>
@@ -1128,9 +1417,15 @@ function generateEmptyWeeks() {
             <div className="text-sm text-blue-900 font-semibold mb-2">Edit names below. The rotation cycles through cooks across the week grid. You can add more cooks; IDs follow A, B, C…</div>
             <div className="space-y-2">
               {cooks.map((c, idx) => (
+<<<<<<< HEAD
                 <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="w-8 text-sm text-gray-500">{c.id}:</span>
                   <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-full sm:w-56 bg-white text-gray-900" />
+=======
+                <div key={c.id} className="flex items-center gap-2">
+                  <span className="w-8 text-sm text-gray-500">{c.id}:</span>
+                  <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-56 bg-white text-gray-900" />
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                   <select
                     className="border rounded px-2 py-1 ml-2 text-sm bg-white text-gray-900"
                     value={c.selectedWeek ?? 0}
@@ -1143,7 +1438,11 @@ function generateEmptyWeeks() {
                       <option key={wIdx} value={wIdx}>Week {wIdx + 1}</option>
                     ))}
                   </select>
+<<<<<<< HEAD
                   <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 w-full ml-0 mt-1">
+=======
+                  <div className="grid grid-cols-7 gap-1 ml-2">
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                     {WEEKDAYS.map((wd, i) => {
                       const weekIdx = c.selectedWeek ?? 0;
                       const weekAvail = c.availabilityWeeks?.[weekIdx] || { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true };
@@ -1153,7 +1452,11 @@ function generateEmptyWeeks() {
                           key={wd}
                           title={`Cook is available on ${WEEKDAY_LABELS[i]}s`}
                           aria-label={`Toggle ${WEEKDAY_LABELS[i]} availability for ${c.name} in week ${weekIdx + 1}`}
+<<<<<<< HEAD
                           className={`w-9 h-9 sm:w-10 sm:h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
+=======
+                          className={`w-10 h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                           tabIndex={0}
                           onClick={() => {
                             setCooks(prev => prev.map((x, j) => {
@@ -1167,7 +1470,11 @@ function generateEmptyWeeks() {
                                 }
                               };
                             }));
+<<<<<<< HEAD
                             setTimeout(() => { fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); triggerAutosave(); }, 0);
+=======
+                            setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                           }}
                           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') {
                             setCooks(prev => prev.map((x, j) => {
@@ -1181,7 +1488,11 @@ function generateEmptyWeeks() {
                                 }
                               };
                             }));
+<<<<<<< HEAD
                             setTimeout(() => { fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); triggerAutosave(); }, 0);
+=======
+                            setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                           }}}
                         >{WEEKDAY_LABELS[i][0]}</button>
                       );
@@ -1213,9 +1524,15 @@ function generateEmptyWeeks() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">Upload data</label>
                   <div className="flex gap-2">
                     <Button onClick={() => csvInputRef.current?.click()}><I.Upload/> Upload CSV</Button>
+<<<<<<< HEAD
                     <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => { if(e.target.files){ handleCSV(e.target.files[0]); e.target.value = ""; } }} />
                     <Button onClick={() => xlsInputRef.current?.click()}><I.Upload/> Upload Excel</Button>
                     <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { if(e.target.files){ handleExcel(e.target.files[0]); e.target.value = ""; } }} />
+=======
+                    <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files && handleCSV(e.target.files[0])} />
+                    <Button onClick={() => xlsInputRef.current?.click()}><I.Upload/> Upload Excel</Button>
+                    <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => e.target.files && handleExcel(e.target.files[0])} />
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
                   </div>
                 </div>
                 <div>
@@ -1263,12 +1580,17 @@ function generateEmptyWeeks() {
                   <option key={wIdx} value={wIdx}>Week {wIdx + 1}</option>
                 ))}
               </select>
+<<<<<<< HEAD
               <Button className="!bg-indigo-600 !text-white hover:!bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Selected Weeks (.ics)</span></Button>
+=======
+              <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Selected Weeks (.ics)</span></Button>
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
             </div>
           </Card>
 
           {/* Inline styles for readability and color accents */}
           <style>{`
+<<<<<<< HEAD
             .meal-title{display:block;background:#fff;border:1px solid #bae6fd;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
             .meal-title:hover{text-decoration:underline}
             .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
@@ -1304,6 +1626,21 @@ function generateEmptyWeeks() {
               .chips{margin-left:0;gap:6px}
               .chips span{padding:6px 8px;font-size:12px;min-width:auto}
             }
+=======
+            .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+            .meal-title:hover{text-decoration:underline}
+            .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
+            .day-card{position:relative}
+            .cookA.day-card{border-left:6px solid #2563eb}
+            .cookB.day-card{border-left:6px solid #7c3aed}
+            .cookDefault.day-card{border-left:6px solid #14b8a6}
+            .cookA .day-body{background:#eff6ff}
+            .cookB .day-body{background:#f5f3ff}
+            .cookDefault .day-body{background:#ecfdf5}
+            .cookA .meal-title{border-color:#bfdbfe}
+            .cookB .meal-title{border-color:#ddd6fe}
+            .cookDefault .meal-title{border-color:#cfe9d5}
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
             @media print { header { display:none !important } body { background:white } }
           `}</style>
         </div>
@@ -1316,8 +1653,13 @@ function generateEmptyWeeks() {
                 <h3 className="text-lg font-semibold">{recipeModal.meal?.name}</h3>
                 <button className="text-gray-500" onClick={() => setRecipeModal({ open: false, meal: null })}><I.X/></button>
               </div>
+<<<<<<< HEAD
               <div className="text-sm font-semibold text-blue-900 mb-2">Ingredients (editable in the table above):</div>
               <div className="text-sm bg-blue-600 text-white rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
+=======
+              <div className="text-sm text-gray-600 mb-3">Ingredients (editable in the table above):</div>
+              <div className="text-sm bg-gray-50 border rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
               {/* Editable recipe URL */}
               <form
                 className="mb-3 flex gap-2 items-center"
@@ -1371,6 +1713,7 @@ function generateEmptyWeeks() {
           </div>
         )}
 
+<<<<<<< HEAD
         {/* Add Meal Modal */}
         {addModal.open && (
           <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setAddModal({ open: false, meal: addModal.meal })}>
@@ -1478,6 +1821,23 @@ function generateEmptyWeeks() {
           .cookA .meal-title{border-color:#bfdbfe}
           .cookB .meal-title{border-color:#ddd6fe}
           .cookDefault .meal-title{border-color:#bae6fd}
+=======
+        {/* Inline styles for readability and color accents */}
+        <style>{`
+          .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+          .meal-title:hover{text-decoration:underline}
+          .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
+          .day-card{position:relative}
+          .cookA.day-card{border-left:6px solid #2563eb}
+          .cookB.day-card{border-left:6px solid #7c3aed}
+          .cookDefault.day-card{border-left:6px solid #14b8a6}
+          .cookA .day-body{background:#eff6ff}
+          .cookB .day-body{background:#f5f3ff}
+          .cookDefault .day-body{background:#ecfdf5}
+          .cookA .meal-title{border-color:#bfdbfe}
+          .cookB .meal-title{border-color:#ddd6fe}
+          .cookDefault .meal-title{border-color:#cfe9d5}
+>>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
           @media print { header { display:none !important } body { background:white } }
         `}</style>
       </div>
