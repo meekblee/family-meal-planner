@@ -1021,9 +1021,9 @@ function generateEmptyWeeks() {
             <div className="text-sm text-blue-900 font-semibold mb-2">Edit names below. The rotation cycles through cooks across the week grid. You can add more cooks; IDs follow A, B, C…</div>
             <div className="space-y-2">
               {cooks.map((c, idx) => (
-                <div key={c.id} className="flex items-center gap-2">
+                <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="w-8 text-sm text-gray-500">{c.id}:</span>
-                  <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-56 bg-white text-gray-900" />
+                  <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-full sm:w-56 bg-white text-gray-900" />
                   <select
                     className="border rounded px-2 py-1 ml-2 text-sm bg-white text-gray-900"
                     value={c.selectedWeek ?? 0}
@@ -1046,7 +1046,7 @@ function generateEmptyWeeks() {
                           key={wd}
                           title={`Cook is available on ${WEEKDAY_LABELS[i]}s`}
                           aria-label={`Toggle ${WEEKDAY_LABELS[i]} availability for ${c.name} in week ${weekIdx + 1}`}
-                          className={`w-10 h-10 sm:w-10 sm:h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                          className={`w-9 h-9 sm:w-10 sm:h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
                           tabIndex={0}
                           onClick={() => {
                             setCooks(prev => prev.map((x, j) => {
