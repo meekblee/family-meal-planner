@@ -4,7 +4,7 @@ import { loadPersisted, savePersisted, hasRemote } from "./persist";
 // =============== Minimal UI atoms (no extra props) ===============
 const Button = ({ className = "", children, ...props }) => (
   <button
-    className={`px-3 py-2 rounded-2xl shadow-sm border border-gray-200 hover:shadow transition disabled:opacity-50 ${className}`}
+    className={`px-3 py-2 rounded-2xl shadow-sm border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 hover:shadow transition disabled:opacity-50 ${className}`}
     {...props}
   >
     {children}
@@ -427,6 +427,44 @@ function generateEmptyWeeks() {
     const urlPart = dinner?.recipeUrl ? `\nRecipe: ${dinner.recipeUrl}` : '';
     return base + urlPart;
   }
+  // Helpers for cook assignment adjustments
+  function availableCookIdsFor(weekIndex, dayIndex) {
+    const weekdayKey = WEEKDAYS[dayIndex % 7];
+    const list = cooks || [];
+    const avail = list.filter(c => {
+      const weekAvail = c.availabilityWeeks && c.availabilityWeeks[weekIndex] ? c.availabilityWeeks[weekIndex] : c.availability;
+      return weekAvail && weekAvail[weekdayKey] !== false;
+    });
+    return (avail.length ? avail : list).map(c => c.id);
+  }
+  function setCookWithOptionalReschedule(weekIndex, dayIndex, newCookId) {
+    setWeeks(prev => {
+      const curWeek = prev[weekIndex];
+      const onlyChanged = curWeek.map((d, i) => i === dayIndex ? { ...d, cook: newCookId } : d);
+      const prevConflict = dayIndex > 0 && onlyChanged[dayIndex - 1].cook === newCookId;
+      // forward pass to avoid adjacency if desired
+      let adjusted = onlyChanged.slice();
+      let changed = false;
+      for (let i = dayIndex + 1; i < adjusted.length; i++) {
+        const prevCook = adjusted[i - 1]?.cook;
+        const curCook = adjusted[i]?.cook;
+        if (prevCook && curCook && prevCook === curCook) {
+          const candidates = availableCookIdsFor(weekIndex, i).filter(id => id !== prevCook);
+          if (candidates.length) {
+            adjusted[i] = { ...adjusted[i], cook: candidates[(i + weekIndex) % candidates.length] };
+            changed = true;
+          }
+        }
+      }
+      if ((prevConflict || changed)) {
+        const ok = window.confirm('Avoid the same cook on consecutive days? This will reassign the rest of the week as needed.');
+        const finalWeek = ok ? adjusted : onlyChanged;
+        return prev.map((w, wi) => wi === weekIndex ? finalWeek : w);
+      }
+      return prev.map((w, wi) => wi === weekIndex ? onlyChanged : w);
+    });
+    setTimeout(triggerAutosave, 0);
+  }
   function downloadICS() {
     const selectedWeeks = exportWeeks.length ? exportWeeks : weeks.map((_, i) => i);
     const events = [];
@@ -760,17 +798,10 @@ function generateEmptyWeeks() {
                           aria-label={`Current cook ${cookName(day.cook)}. Tap to cycle.`}
                           onClick={() => {
                             const wIdx = activeWeek;
-                            const weekdayKey = WEEKDAYS[idx % 7];
-                            // Available cooks for this week/day (fallback to all)
-                            const avail = cooks.filter(c => {
-                              const weekAvail = c.availabilityWeeks && c.availabilityWeeks[wIdx] ? c.availabilityWeeks[wIdx] : c.availability;
-                              return weekAvail && weekAvail[weekdayKey] !== false;
-                            });
-                            const order = (avail.length ? avail : cooks).map(c => c.id);
+                            const order = availableCookIdsFor(wIdx, idx);
                             const cur = day.cook || order[0];
                             const next = order[(order.indexOf(cur) + 1) % order.length];
-                            setWeeks(prev => prev.map((week, iW) => iW === wIdx ? week.map((d, iD) => iD === idx ? { ...d, cook: next } : d) : week));
-                            setTimeout(() => triggerAutosave(), 0);
+                            setCookWithOptionalReschedule(wIdx, idx, next);
                           }}
                         >{cookName(day.cook)}</button>
                         <select
@@ -778,9 +809,7 @@ function generateEmptyWeeks() {
                           value={day.cook || (cooks[0]?.id || 'A')}
                           onChange={(e) => {
                             const newCook = e.target.value;
-                            setWeeks(prev => prev.map((week, wIdx) => wIdx === activeWeek ? week.map((d, dIdx) => dIdx === idx ? { ...d, cook: newCook } : d) : week));
-                            // Persist immediately for all users
-                            setTimeout(() => triggerAutosave(), 0);
+                            setCookWithOptionalReschedule(activeWeek, idx, newCook);
                           }}
                         >
                           {cooks.map(c => (<option key={c.id} value={c.id}>{c.name || c.id}</option>))}
