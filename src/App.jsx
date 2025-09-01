@@ -17,16 +17,16 @@ const SectionTitle = ({ children }) => (
   <h2 className="text-xl font-extrabold tracking-tight mb-2 text-gray-900">{children}</h2>
 );
 const I_OLD = {
-  Cal: () => <span aria-hidden>📅</span>,
-  DL: () => <span aria-hidden>⬇️</span>,
-  List: () => <span aria-hidden>🧾</span>,
-  Shuffle: () => <span aria-hidden>🔀</span>,
-  Upload: () => <span aria-hidden>📤</span>,
-  Print: () => <span aria-hidden>🖨️</span>,
-  Link: () => <span aria-hidden>🔗</span>,
-  X: () => <span aria-hidden>✖️</span>,
-  Plus: () => <span aria-hidden>➕</span>,
-  Edit: () => <span aria-hidden>✏️</span>,
+  Cal: () => <span aria-hidden>≡ƒôà</span>,
+  DL: () => <span aria-hidden>Γ¼ç∩╕Å</span>,
+  List: () => <span aria-hidden>≡ƒº╛</span>,
+  Shuffle: () => <span aria-hidden>≡ƒöÇ</span>,
+  Upload: () => <span aria-hidden>≡ƒôñ</span>,
+  Print: () => <span aria-hidden>≡ƒû¿∩╕Å</span>,
+  Link: () => <span aria-hidden>≡ƒöù</span>,
+  X: () => <span aria-hidden>Γ£û∩╕Å</span>,
+  Plus: () => <span aria-hidden>Γ₧ò</span>,
+  Edit: () => <span aria-hidden>Γ£Å∩╕Å</span>,
 };
 
 // Inline SVG icon set (no external deps)
@@ -174,7 +174,7 @@ function downloadFile(filename, content, mime) {
   document.body.removeChild(link);
 }
 
-// Ingredient heuristics (heart‑healthy leaning)
+// Ingredient heuristics (heartΓÇæhealthy leaning)
 function ingredientHeuristics(name) {
   const n = String(name || "").toLowerCase();
   const base = {
@@ -843,7 +843,7 @@ function generateEmptyWeeks() {
             <div>
               <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-gray-900 leading-tight">Family Meal Planner</h1>
               <p className="text-xs md:text-base text-gray-600">
-                4-week rotation • dinners at 6:00 PM<br className="md:hidden" />
+                4-week rotation ΓÇó dinners at 6:00 PM<br className="md:hidden" />
                 <span className="block md:inline">{cooks.map(c => c.name).join(' & ')}</span>
               </p>
             </div>
@@ -927,13 +927,13 @@ function generateEmptyWeeks() {
                       {mode === 'all' && (
                         <div className="rounded-lg p-2 bg-amber-600 text-white">
                           <div className="text-xs font-semibold">Breakfast</div>
-                          <div className="font-semibold">{(day.b && day.b.name) || '—'}</div>
+                          <div className="font-semibold">{(day.b && day.b.name) || 'ΓÇö'}</div>
                         </div>
                       )}
                       {mode === 'all' && (
                         <div className="rounded-lg p-2 bg-sky-600 text-white">
                           <div className="text-xs font-semibold">Lunch</div>
-                          <div className="font-semibold">{(day.l && day.l.name) || '—'}</div>
+                          <div className="font-semibold">{(day.l && day.l.name) || 'ΓÇö'}</div>
                         </div>
                       )}
                       <div className="rounded-lg p-2 day-body">
@@ -946,10 +946,10 @@ function generateEmptyWeeks() {
                             style={{ lineHeight: 1, minWidth: 40, minHeight: 40 }}
                             onClick={() => setRecipeModal({ open: true, meal: day.d || null, dayIndex: idx, weekIndex: activeWeek })}
                             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { setRecipeModal({ open: true, meal: day.d || null, dayIndex: idx, weekIndex: activeWeek }); } }}
-                          >🔄</button>
+                          >≡ƒöä</button>
                           <span className="ml-2 text-xs text-gray-500">Edit, Replace, or Add recipe and link.</span>
                         </div>
-                        <button className="meal-title w-full text-left" onClick={() => setRecipeModal({ open: true, meal: day.d || null, dayIndex: idx, weekIndex: activeWeek })}>{(day.d && day.d.name) || '—'}</button>
+                        <button className="meal-title w-full text-left" onClick={() => setRecipeModal({ open: true, meal: day.d || null, dayIndex: idx, weekIndex: activeWeek })}>{(day.d && day.d.name) || 'ΓÇö'}</button>
                         <div className="meal-ingredients mt-2">{(day.d && day.d.ingredients) || ''}</div>
                         {!!(day.d && day.d.recipeUrl) && (
                           <div className="text-xs mt-1"><a className="underline" target="_blank" rel="noreferrer" href={day.d.recipeUrl}>Open saved recipe</a></div>
@@ -962,7 +962,7 @@ function generateEmptyWeeks() {
                                 <button key={star} className={`text-base ${day.d.rating >= star ? 'text-yellow-500' : 'text-gray-400'} transition-colors`} style={{ padding: '2px 6px' }} onClick={() => {
                                   setWeeks(prev => prev.map((week, wIdx) => wIdx === activeWeek ? week.map((d, dIdx) => dIdx === idx ? { ...d, d: { ...d.d, rating: star } } : d) : week));
                                   setMeals(prev => prev.map(m => m.name === day.d.name ? { ...m, rating: star } : m));
-                                }} aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}>{day.d.rating >= star ? '★' : '☆'}</button>
+                                }} aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}>{day.d.rating >= star ? 'Γÿà' : 'Γÿå'}</button>
                               ))}
                             </div>
                             <span className="text-xs text-gray-500 mt-1">Rate this meal</span>
@@ -1039,7 +1039,7 @@ function generateEmptyWeeks() {
                       <Button type="button" className="bg-white" onClick={() => handleInferIngredients(m._id)}>Infer</Button>
                       <div className="flex gap-1 items-center">
                         {[1,2,3,4,5].map(star => (
-                          <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'}`} onClick={() => handleEditMeal(m._id, 'rating', star)}>★</button>
+                          <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'}`} onClick={() => handleEditMeal(m._id, 'rating', star)}>Γÿà</button>
                         ))}
                       </div>
                     </div>
@@ -1058,8 +1058,8 @@ function generateEmptyWeeks() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gradient-to-r from-pink-50 to-sky-50 text-gray-800 sticky top-0">
                     <tr>
-                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('name')}>Meal {sortKey==='name' ? (sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('avg')}>Avg {sortKey==='avg' ? (sortDir==='desc' ? '▼' : '▲') : ''}</th>
+                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('name')}>Meal {sortKey==='name' ? (sortDir==='asc' ? 'Γû▓' : 'Γû╝') : ''}</th>
+                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('avg')}>Avg {sortKey==='avg' ? (sortDir==='desc' ? 'Γû╝' : 'Γû▓') : ''}</th>
                       <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('type')}>Type</th>
                       <th className="text-left p-3 font-semibold">Ingredients</th>
                       <th className="text-left p-3 font-semibold">Recipe</th>
@@ -1100,7 +1100,7 @@ function generateEmptyWeeks() {
                         <td className="p-3">
                           <div className="flex gap-1 items-center">
                             {[1,2,3,4,5].map(star => (
-                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'} bg-transparent border-0 hover:scale-105 transition-transform`} onClick={() => handleEditMeal(m._id, 'rating', star)}>★</button>
+                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'} bg-transparent border-0 hover:scale-105 transition-transform`} onClick={() => handleEditMeal(m._id, 'rating', star)}>Γÿà</button>
                             ))}
                           </div>
                         </td>
@@ -1125,7 +1125,7 @@ function generateEmptyWeeks() {
           {/* Cooks */}
           <Card className="bg-blue-100 border-2 border-blue-400 shadow-lg">
             <SectionTitle className="bg-blue-100 text-blue-900 font-extrabold p-2 rounded shadow">Cooks (Rotation & Names)</SectionTitle>
-            <div className="text-sm text-blue-900 font-semibold mb-2">Edit names below. The rotation cycles through cooks across the week grid. You can add more cooks; IDs follow A, B, C…</div>
+            <div className="text-sm text-blue-900 font-semibold mb-2">Edit names below. The rotation cycles through cooks across the week grid. You can add more cooks; IDs follow A, B, CΓÇª</div>
             <div className="space-y-2">
               {cooks.map((c, idx) => (
                 <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -1317,7 +1317,7 @@ function generateEmptyWeeks() {
                 <button className="text-gray-500" onClick={() => setRecipeModal({ open: false, meal: null })}><I.X/></button>
               </div>
               <div className="text-sm font-semibold text-blue-900 mb-2">Ingredients (editable in the table above):</div>
-              <div className="text-sm bg-blue-600 text-white rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
+              <div className="text-sm bg-blue-600 text-white rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || 'ΓÇö'}</div>
               {/* Editable recipe URL */}
               <form
                 className="mb-3 flex gap-2 items-center"
@@ -1505,7 +1505,7 @@ function GroceryTable({ entries }) {
             {items.map((it, i) => (
               <li key={i} className="flex items-center justify-between py-1.5">
                 <span className="font-medium text-gray-900">{titleCase(it.name || '(unknown item)')}</span>
-                <span className="text-gray-600">× {it.count}</span>
+                <span className="text-gray-600">├ù {it.count}</span>
               </li>
             ))}
           </ul>
