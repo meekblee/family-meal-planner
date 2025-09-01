@@ -280,6 +280,15 @@ const COOK_COLORS = {
   E: { chip: "bg-rose-100 text-rose-700 border-rose-200", text: "text-rose-700", border: "border-rose-300" },
   default: { chip: "bg-sky-100 text-sky-700 border-sky-200", text: "text-sky-700", border: "border-sky-300" },
 };
+// Solid header backgrounds for day cards per cook
+const COOK_HEADER = {
+  A: "bg-blue-600 text-white",
+  B: "bg-violet-600 text-white",
+  C: "bg-emerald-600 text-white",
+  D: "bg-amber-600 text-gray-900",
+  E: "bg-rose-600 text-white",
+  default: "bg-sky-600 text-white",
+};
 const cookStyle = (id) => COOK_COLORS[id] || COOK_COLORS.default;
 const cookClass = (id) => {
   if (id === "A") return "cookA";
@@ -289,6 +298,7 @@ const cookClass = (id) => {
   if (id === "E") return "cookE";
   return "cookDefault";
 };
+const cookHeaderClass = (id) => COOK_HEADER[id] || COOK_HEADER.default;
 
 // =============== App ===============
 export default function MealPlannerApp() {
@@ -866,12 +876,12 @@ function generateEmptyWeeks() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {weeks[activeWeek].map((day, idx) => (
                   <div key={idx} className={`day-card rounded-2xl border border-gray-200 overflow-hidden ${cookClass(day.cook)}`}>
-                    <div className="bg-gray-50 px-3 py-2 flex justify-between items-center">
-                      <div className="font-semibold text-gray-900">{day.label}</div>
+                    <div className={`${cookHeaderClass(day.cook)} px-3 py-2 flex justify-between items-center`}> 
+                      <div className="font-semibold">{day.label}</div>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}
+                          className={`px-2 py-0.5 rounded-full text-xs border sm:hidden ${cookStyle(day.cook).chip}`}
                           title="Tap to cycle cook"
                           aria-label={`Current cook ${cookName(day.cook)}. Tap to cycle.`}
                           onClick={() => {
@@ -883,7 +893,7 @@ function generateEmptyWeeks() {
                           }}
                         >{cookName(day.cook)}</button>
                         <select
-                          className="border rounded px-2 py-1 text-xs bg-white text-gray-900"
+                          className="hidden sm:block border rounded px-2 py-1 text-xs bg-white text-gray-900"
                           value={day.cook || (cooks[0]?.id || 'A')}
                           onChange={(e) => {
                             const newCook = e.target.value;
@@ -896,19 +906,19 @@ function generateEmptyWeeks() {
                     </div>
                     <div className="p-3 space-y-2">
                       {mode === 'all' && (
-                        <div className="bg-yellow-50 rounded-lg p-2">
-                          <div className="text-xs text-gray-600">Breakfast</div>
-                          <div className="font-medium">{(day.b && day.b.name) || '—'}</div>
+                        <div className="rounded-lg p-2 bg-amber-600 text-white">
+                          <div className="text-xs font-semibold">Breakfast</div>
+                          <div className="font-semibold">{(day.b && day.b.name) || '—'}</div>
                         </div>
                       )}
                       {mode === 'all' && (
-                        <div className="bg-blue-50 rounded-lg p-2">
-                          <div className="text-xs text-gray-600">Lunch</div>
-                          <div className="font-medium">{(day.l && day.l.name) || '—'}</div>
+                        <div className="rounded-lg p-2 bg-sky-600 text-white">
+                          <div className="text-xs font-semibold">Lunch</div>
+                          <div className="font-semibold">{(day.l && day.l.name) || '—'}</div>
                         </div>
                       )}
                       <div className="rounded-lg p-2 day-body">
-                        <div className="text-xs text-gray-600 flex items-center gap-2">Dinner
+                        <div className="flex items-center gap-2"><span className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-indigo-600 text-white">Dinner</span>
                           <button
                             className="ml-2 px-2 py-1 rounded hover:bg-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                             title="Edit or Replace Dinner"
@@ -990,21 +1000,21 @@ function generateEmptyWeeks() {
               <div className="space-y-3">
                 {sortedFilteredMeals.map((m, idx) => (
                   <div key={m._id || idx} className="border rounded-2xl p-3 bg-white shadow-sm">
-                    <div className="text-xs text-gray-500 mb-1">Meal</div>
+                    <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-2">Meal</div>
                     <input value={m.name} onChange={e => handleEditMeal(m._id, 'name', e.target.value)} className="w-full border rounded-xl px-3 py-2 mb-2" placeholder="Meal name" />
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">Avg</div>
+                        <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-1">Avg</div>
                         <input type="number" step="0.1" min="0" max="10" value={m.avg} onChange={e => handleEditMeal(m._id, 'avg', e.target.value)} className="w-full border rounded-xl px-2 py-2 text-center" />
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">Type</div>
+                        <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-1">Type</div>
                         <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(m._id, 'type', e.target.value)} className="w-full border rounded-xl px-2 py-2 bg-white">
                           <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
                         </select>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 mb-1">Ingredients</div>
+                    <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-1">Ingredients</div>
                     <textarea rows={4} value={m.ingredients || ''} onChange={e => handleEditMeal(m._id, 'ingredients', e.target.value)} className="w-full border rounded-xl px-3 py-2 mb-2" placeholder="Comma-separated items" />
                     <div className="flex justify-between items-center mb-2">
                       <Button type="button" className="bg-white" onClick={() => handleInferIngredients(m._id)}>Infer</Button>
@@ -1014,7 +1024,7 @@ function generateEmptyWeeks() {
                         ))}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 mb-1">Recipe URL</div>
+                    <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-1">Recipe URL</div>
                     <input value={m.recipeUrl || ''} onChange={e => handleEditMeal(m._id, 'recipeUrl', e.target.value)} placeholder="https://..." className="w-full border rounded-xl px-3 py-2 mb-2" />
                     <div className="flex justify-end">
                       <Button type="button" className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" title="Delete meal" onClick={() => handleDeleteMeal(m._id)}><I.X/> Delete</Button>
@@ -1086,9 +1096,9 @@ function generateEmptyWeeks() {
             )}
             {/* Sticky bottom bar for Save/Discard */}
             {showEditor && dirtyMeals && (
-              <div className="sticky bottom-0 left-0 w-full bg-white border-t shadow flex justify-end gap-2 p-3 z-10">
+              <div className="sticky bottom-0 left-0 w-full bg-blue-700 text-white shadow flex justify-end gap-2 p-3 z-10">
                 <Button className="bg-blue-600 text-white" onClick={handleSaveMeals}><I.Edit/> Save changes</Button>
-                <Button className="bg-gray-200" onClick={handleDiscardMeals}><I.X/> Discard edits</Button>
+                <Button className="bg-white text-blue-700" onClick={handleDiscardMeals}><I.X/> Discard edits</Button>
               </div>
             )}
           </Card>
@@ -1287,8 +1297,8 @@ function generateEmptyWeeks() {
                 <h3 className="text-lg font-semibold">{recipeModal.meal?.name}</h3>
                 <button className="text-gray-500" onClick={() => setRecipeModal({ open: false, meal: null })}><I.X/></button>
               </div>
-              <div className="text-sm text-gray-600 mb-3">Ingredients (editable in the table above):</div>
-              <div className="text-sm bg-gray-50 border rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
+              <div className="text-sm font-semibold text-blue-900 mb-2">Ingredients (editable in the table above):</div>
+              <div className="text-sm bg-blue-600 text-white rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
               {/* Editable recipe URL */}
               <form
                 className="mb-3 flex gap-2 items-center"
