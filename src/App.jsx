@@ -376,12 +376,25 @@ export default function MealPlannerApp() {
       const XLSX = (await import("xlsx")).default;
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
-      const sheetName = wb.SheetNames.find((n) => n.toLowerCase().includes("sheet2")) || wb.SheetNames[0];
-      const ws = wb.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-      const parsed = parseUploadedRows(rows);
+      // Pick the first sheet that yields recognizable meal rows; fallback to the one with most parsed rows
+      let best = { name: null, rows: [], parsed: [] };
+      for (const name of wb.SheetNames) {
+        const ws = wb.Sheets[name];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        const parsed = parseUploadedRows(rows);
+        if (parsed.length && (!best.parsed.length || parsed.length > best.parsed.length)) {
+          best = { name, rows, parsed };
+        }
+      }
+      const parsed = best.parsed.length ? best.parsed : (() => {
+        // Fallback to first sheet even if empty, to trigger the friendly alert
+        const ws0 = wb.Sheets[wb.SheetNames[0]];
+        const rows0 = XLSX.utils.sheet_to_json(ws0, { defval: "" });
+        return parseUploadedRows(rows0);
+      })();
       if (!parsed.length) return alert("Could not detect meal data in Excel sheet.");
       setMeals(ensureIds(parsed));
+      alert(`Imported ${parsed.length} meals from Excel`);
     } catch (e) {
       console.warn("Excel parser not available", e);
       alert("Excel parser not available here. Try CSV instead.");
@@ -391,9 +404,12 @@ export default function MealPlannerApp() {
   function parseUploadedRows(rows) {
     const out = [];
     for (const r of rows || []) {
-      const name = r["Meal Name"] || r["name"] || r["Dish"] || r["dish"];
+      // Normalize headers by trimming and lowering keys
+      const norm = {};
+      Object.keys(r || {}).forEach(k => norm[String(k).trim().toLowerCase()] = r[k]);
+      const name = norm["meal name"] || norm["name"] || norm["dish"] || r["Meal Name"] || r["name"] || r["Dish"] || r["dish"];
       if (!name) continue;
-      let avg = Number(r["Average Score"]);
+      let avg = Number(norm["average score"] ?? norm["avg"] ?? norm["rating"] ?? r["Average Score"] ?? r["Avg"] ?? r["Rating"]);
       if (!avg || isNaN(avg)) {
         const keys = Object.keys(r);
         const voteKeys = keys.filter((k) => k !== "Dish" && k !== "Total Score" && k !== "Meal Name" && (/^.*@.*\..*$/.test(k) || /score/i.test(k)));
@@ -401,9 +417,9 @@ export default function MealPlannerApp() {
         if (votes.length) avg = votes.reduce((a, b) => a + b, 0) / votes.length;
         else if (Number(r["Total Score"])) avg = Number(r["Total Score"]) / 6; else avg = 3;
       }
-      const type = r["Meal Type"] || inferMealType(name);
-      const ingredients = r["Ingredients"] || ingredientHeuristics(name);
-      const recipeUrl = r["Recipe URL"] || r["Recipe"] || r["URL"] || "";
+      const type = norm["meal type"] || r["Meal Type"] || inferMealType(name);
+      const ingredients = norm["ingredients"] || r["Ingredients"] || ingredientHeuristics(name);
+      const recipeUrl = norm["recipe url"] || norm["recipe"] || norm["url"] || r["Recipe URL"] || r["Recipe"] || r["URL"] || "";
       out.push({ name: String(name).trim(), avg: Number(avg), type, ingredients, recipeUrl: String(recipeUrl || "").trim() });
     }
     return out;
@@ -1197,9 +1213,9 @@ function generateEmptyWeeks() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">Upload data</label>
                   <div className="flex gap-2">
                     <Button onClick={() => csvInputRef.current?.click()}><I.Upload/> Upload CSV</Button>
-                    <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files && handleCSV(e.target.files[0])} />
+                    <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => { if(e.target.files){ handleCSV(e.target.files[0]); e.target.value = ""; } }} />
                     <Button onClick={() => xlsInputRef.current?.click()}><I.Upload/> Upload Excel</Button>
-                    <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => e.target.files && handleExcel(e.target.files[0])} />
+                    <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { if(e.target.files){ handleExcel(e.target.files[0]); e.target.value = ""; } }} />
                   </div>
                 </div>
                 <div>
