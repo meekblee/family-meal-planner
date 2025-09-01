@@ -29,18 +29,96 @@ const I_OLD = {
   Edit: () => <span aria-hidden>✏️</span>,
 };
 
-// Replaced icon set with ASCII-safe symbols (avoid encoding issues)
+// Inline SVG icon set (no external deps)
+const IconBase = ({ children, className = "", title }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden={title ? undefined : true}
+    role={title ? 'img' : 'presentation'}
+    className={`inline-block w-5 h-5 ${className}`}
+    style={{ verticalAlign: '-0.2em' }}
+  >
+    {title ? <title>{title}</title> : null}
+    {children}
+  </svg>
+);
 const I = {
-  Cal: () => <span aria-hidden>[Cal]</span>,
-  DL: () => <span aria-hidden>[DL]</span>,
-  List: () => <span aria-hidden>[List]</span>,
-  Shuffle: () => <span aria-hidden>[Shuf]</span>,
-  Upload: () => <span aria-hidden>[Up]</span>,
-  Print: () => <span aria-hidden>[Print]</span>,
-  Link: () => <span aria-hidden>[Link]</span>,
-  X: () => <span aria-hidden>[X]</span>,
-  Plus: () => <span aria-hidden>[+]</span>,
-  Edit: () => <span aria-hidden>[Edit]</span>,
+  Cal: () => (
+    <IconBase title="Calendar">
+      <rect x="3" y="5" width="18" height="16" rx="2"/>
+      <line x1="16" y1="3" x2="16" y2="7"/>
+      <line x1="8" y1="3" x2="8" y2="7"/>
+      <line x1="3" y1="9" x2="21" y2="9"/>
+    </IconBase>
+  ),
+  DL: () => (
+    <IconBase title="Download">
+      <path d="M12 3v12"/>
+      <path d="M7 10l5 5 5-5"/>
+      <path d="M5 21h14"/>
+    </IconBase>
+  ),
+  List: () => (
+    <IconBase title="List">
+      <circle cx="4" cy="6" r="1"/>
+      <line x1="8" y1="6" x2="21" y2="6"/>
+      <circle cx="4" cy="12" r="1"/>
+      <line x1="8" y1="12" x2="21" y2="12"/>
+      <circle cx="4" cy="18" r="1"/>
+      <line x1="8" y1="18" x2="21" y2="18"/>
+    </IconBase>
+  ),
+  Shuffle: () => (
+    <IconBase title="Shuffle">
+      <path d="M16 3h5v5"/>
+      <path d="M21 3l-7 7"/>
+      <path d="M4 20l7-7"/>
+      <path d="M4 4h5v5"/>
+    </IconBase>
+  ),
+  Upload: () => (
+    <IconBase title="Upload">
+      <path d="M12 21V9"/>
+      <path d="M7 14l5-5 5 5"/>
+      <path d="M5 21h14"/>
+    </IconBase>
+  ),
+  Print: () => (
+    <IconBase title="Print">
+      <path d="M6 9V4h12v5"/>
+      <rect x="6" y="13" width="12" height="8" rx="2"/>
+      <path d="M6 13h12"/>
+    </IconBase>
+  ),
+  Link: () => (
+    <IconBase title="Link">
+      <path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/>
+      <path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/>
+    </IconBase>
+  ),
+  X: () => (
+    <IconBase title="Close">
+      <line x1="6" y1="6" x2="18" y2="18"/>
+      <line x1="6" y1="18" x2="18" y2="6"/>
+    </IconBase>
+  ),
+  Plus: () => (
+    <IconBase title="Add">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </IconBase>
+  ),
+  Edit: () => (
+    <IconBase title="Edit">
+      <path d="M12 20h9"/>
+      <path d="M16.5 3.5l4 4-11 11H5.5v-4.5z"/>
+    </IconBase>
+  ),
 };
 
 // =============== Utilities ===============
@@ -744,8 +822,8 @@ function generateEmptyWeeks() {
               </p>
             </div>
             <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto items-stretch md:items-center">
-              <Button className="bg-gray-900 text-white hover:opacity-90 w-full md:w-auto min-h-[44px] text-base" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
-              <Button className="bg-indigo-600 text-white hover:bg-indigo-700 w-full md:w-auto min-h-[44px] text-base" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
+              <Button className="!bg-gray-900 !text-white hover:!bg-gray-900 hover:!opacity-90 w-full md:w-auto min-h-[44px] text-base" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
+              <Button className="!bg-indigo-600 !text-white hover:!bg-indigo-700 w-full md:w-auto min-h-[44px] text-base" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
               <div className="flex items-center justify-between md:justify-start gap-2 w-full md:w-auto">
                 <Button className="bg-white text-gray-700 border border-gray-300 w-full md:w-auto min-h-[44px]" onClick={triggerAutosave}><I.DL/> Save now</Button>
                 {!!lastSavedAt && (
@@ -1156,7 +1234,7 @@ function generateEmptyWeeks() {
                   <option key={wIdx} value={wIdx}>Week {wIdx + 1}</option>
                 ))}
               </select>
-              <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Selected Weeks (.ics)</span></Button>
+              <Button className="!bg-indigo-600 !text-white hover:!bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Selected Weeks (.ics)</span></Button>
             </div>
           </Card>
 
