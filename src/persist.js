@@ -4,7 +4,12 @@
 //   PUT  /state -> accepts the same JSON body and persists it
 
 const KEY = "familyMealPlannerAutosave";
-const base = (typeof import !== 'undefined' && typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || '';
+let base = '';
+try {
+  base = (import.meta && import.meta.env && import.meta.env.VITE_API_BASE) || '';
+} catch (_) {
+  base = '';
+}
 
 async function fetchJson(url, options) {
   const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options });
@@ -49,4 +54,3 @@ export async function savePersisted(state) {
 export function hasRemote() {
   return !!base;
 }
-
