@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { loadPersisted, savePersisted, hasRemote } from "./persist";
 
 // =============== Minimal UI atoms (no extra props) ===============
 const Button = ({ className = "", children, ...props }) => (
@@ -449,8 +450,8 @@ function generateEmptyWeeks() {
   }, [startDate]);
 
   // === AUTOSAVE HELPERS ===
-  const AUTOSAVE_KEY = "familyMealPlannerAutosave";
-  function saveAutosave(state) {
+  const AUTOSAVE_KEY = "familyMealPlannerAutosave"; // kept for reference in UI only
+  async function saveAutosave(state) {
     const minimal = {
       meals: state.meals,
       weeks: state.weeks,
@@ -462,35 +463,32 @@ function generateEmptyWeeks() {
       seed: state.seed,
     };
     try {
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(minimal));
+      await savePersisted(minimal);
       setShowSavedToast(true);
       setTimeout(() => setShowSavedToast(false), 1200);
     } catch {}
   }
-  function loadAutosave() {
-    try {
-      const raw = localStorage.getItem(AUTOSAVE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch { return null; }
+  async function loadAutosave() {
+    try { return await loadPersisted(); } catch { return null; }
   }
 
   // Prompt to restore autosave on first mount
   useEffect(() => {
     if (didPromptRestoreRef.current) return;
-    const saved = loadAutosave();
-    if (saved) {
-      didPromptRestoreRef.current = true;
-      // Auto-restore last autosave for reliable persistence
-      setMeals(saved.meals || []);
-      setWeeks(saved.weeks || generateEmptyWeeks());
-      setCooks(saved.cooks || DEFAULTS.cooks);
-      setStartDate(saved.startDate || STARTING_DEFAULT());
-      setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
-      setTextThreshold(saved.threshold ?? 3);
-      setMode(saved.mode || "dinners");
-      setSeed(saved.seed || "");
-    }
+    didPromptRestoreRef.current = true;
+    (async () => {
+      const saved = await loadAutosave();
+      if (saved) {
+        setMeals(saved.meals || []);
+        setWeeks(saved.weeks || generateEmptyWeeks());
+        setCooks(saved.cooks || DEFAULTS.cooks);
+        setStartDate(saved.startDate || STARTING_DEFAULT());
+        setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
+        setTextThreshold(saved.threshold ?? 3);
+        setMode(saved.mode || "dinners");
+        setSeed(saved.seed || "");
+      }
+    })();
   }, []);
   // Debounced autosave on relevant state changes
   useEffect(() => {
@@ -560,7 +558,10 @@ function generateEmptyWeeks() {
   function handleEditMeal(idOrIdx, key, value) {
     setLocalMeals(prev => {
       const updated = prev.map((m, i) => (m._id === idOrIdx || i === idOrIdx) ? { ...m, [key]: value } : m);
-      setMeals(ensureIds(updated));
+      const nextMeals = ensureIds(updated);
+      setMeals(nextMeals);
+      // Immediate autosave of edits so they persist across reloads
+      try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
       return updated;
     });
     setDirtyMeals(true);
@@ -568,7 +569,9 @@ function generateEmptyWeeks() {
   function handleInferIngredients(idOrIdx) {
     setLocalMeals(prev => {
       const updated = prev.map((m, i) => (m._id === idOrIdx || i === idOrIdx) ? { ...m, ingredients: ingredientHeuristics(m.name) } : m);
-      setMeals(ensureIds(updated));
+      const nextMeals = ensureIds(updated);
+      setMeals(nextMeals);
+      try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
       return updated;
     });
     setDirtyMeals(true);
@@ -580,7 +583,9 @@ function generateEmptyWeeks() {
   function handleDeleteMeal(idOrIdx) {
     setLocalMeals(prev => {
       const updated = prev.filter((m, i) => !(m._id === idOrIdx || i === idOrIdx));
-      setMeals(ensureIds(updated));
+      const nextMeals = ensureIds(updated);
+      setMeals(nextMeals);
+      try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
       return updated;
     });
     setDirtyMeals(true);
@@ -618,7 +623,9 @@ function generateEmptyWeeks() {
         ...prev,
         { _id: `m${idCounterRef.current++}`, name: "New meal", avg: 3, type: "Dinner", ingredients: "", recipeUrl: "" }
       ];
-      setMeals(ensureIds(updated));
+      const nextMeals = ensureIds(updated);
+      setMeals(nextMeals);
+      try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
       return updated;
     });
     setDirtyMeals(true);
@@ -842,7 +849,7 @@ function generateEmptyWeeks() {
                         <td className="p-3">
                           <div className="flex gap-1 items-center">
                             {[1,2,3,4,5].map(star => (
-                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'} bg-transparent border-0 hover:scale-105 transition-transform`} onClick={() => handleEditMeal(idx, 'rating', star)}>★</button>
+                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'} bg-transparent border-0 hover:scale-105 transition-transform`} onClick={() => handleEditMeal(m._id, 'rating', star)}>★</button>
                             ))}
                           </div>
                         </td>
