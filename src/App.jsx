@@ -640,6 +640,7 @@ function generateEmptyWeeks() {
   }
   const [sortKey, setSortKey] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
+  const [isMobile, setIsMobile] = useState(false);
   const sourceMeals = showEditor ? localMeals : meals;
   const sortedFilteredMeals = sourceMeals
     .filter(m => m.name.toLowerCase().includes(mealSearch.toLowerCase()) || (m.type && m.type.toLowerCase().includes(mealSearch.toLowerCase())))
@@ -653,6 +654,15 @@ function generateEmptyWeeks() {
 
   // When meals change, ensure IDs and update localMeals for discard
   useEffect(() => { setLocalMeals(ensureIds(meals)); }, [meals]);
+
+  // Track small screens for a friendlier mobile editor
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const cb = (e) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    if (mq.addEventListener) mq.addEventListener('change', cb); else mq.addListener(cb);
+    return () => { if (mq.removeEventListener) mq.removeEventListener('change', cb); else mq.removeListener(cb); };
+  }, []);
 
   return (
     <ErrorBoundary>
@@ -801,8 +811,46 @@ function generateEmptyWeeks() {
                 <Button className="bg-sky-500 text-white hover:bg-sky-600" onClick={() => setAddModal({ open: true, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } })}><I.Plus/> Add meal</Button>
               </div>
             )}
-            {/* Meals table with sorting, filtering, infer, delete, and URL validation */}
-            {showEditor && (
+            {/* Mobile card editor */}
+            {showEditor && isMobile && (
+              <div className="space-y-3">
+                {sortedFilteredMeals.map((m, idx) => (
+                  <div key={m._id || idx} className="border rounded-2xl p-3 bg-white shadow-sm">
+                    <div className="text-xs text-gray-500 mb-1">Meal</div>
+                    <input value={m.name} onChange={e => handleEditMeal(m._id, 'name', e.target.value)} className="w-full border rounded-xl px-3 py-2 mb-2" placeholder="Meal name" />
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Avg</div>
+                        <input type="number" step="0.1" min="0" max="10" value={m.avg} onChange={e => handleEditMeal(m._id, 'avg', e.target.value)} className="w-full border rounded-xl px-2 py-2 text-center" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Type</div>
+                        <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(m._id, 'type', e.target.value)} className="w-full border rounded-xl px-2 py-2 bg-white">
+                          <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-1">Ingredients</div>
+                    <textarea rows={4} value={m.ingredients || ''} onChange={e => handleEditMeal(m._id, 'ingredients', e.target.value)} className="w-full border rounded-xl px-3 py-2 mb-2" placeholder="Comma-separated items" />
+                    <div className="flex justify-between items-center mb-2">
+                      <Button type="button" className="bg-white" onClick={() => handleInferIngredients(m._id)}>Infer</Button>
+                      <div className="flex gap-1 items-center">
+                        {[1,2,3,4,5].map(star => (
+                          <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'}`} onClick={() => handleEditMeal(m._id, 'rating', star)}>★</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-1">Recipe URL</div>
+                    <input value={m.recipeUrl || ''} onChange={e => handleEditMeal(m._id, 'recipeUrl', e.target.value)} placeholder="https://..." className="w-full border rounded-xl px-3 py-2 mb-2" />
+                    <div className="flex justify-end">
+                      <Button type="button" className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" title="Delete meal" onClick={() => handleDeleteMeal(m._id)}><I.X/> Delete</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Desktop/tablet editor */}
+            {showEditor && !isMobile && (
               <div className="overflow-auto max-h-[420px] border rounded-xl shadow-sm">
                 <table className="min-w-full text-sm">
                   <thead className="bg-gradient-to-r from-pink-50 to-sky-50 text-gray-800 sticky top-0">
