@@ -241,7 +241,7 @@ export default function MealPlannerApp() {
       { name: "Chicken and wild rice casserole, green beans", avg: 7.1 },
       { name: "Minestrone soup (low-sodium), whole-grain bread", avg: 7.1 },
     ].map((m) => ({ ...m, type: inferMealType(m.name), ingredients: ingredientHeuristics(m.name), recipeUrl: "" }));
-    setMeals(sample);
+    setMeals(ensureIds(sample));
   }, [meals.length]);
 
   const filteredMeals = useMemo(() => meals.filter((m) => (Number(m.avg) || 0) >= threshold), [meals, threshold]);
@@ -257,7 +257,7 @@ export default function MealPlannerApp() {
           const rows = res.data || [];
           const parsed = parseUploadedRows(rows);
           if (!parsed.length) return alert("Could not detect meal data in CSV.");
-          setMeals(parsed);
+          setMeals(ensureIds(parsed));
         },
       });
     } catch (e) {
@@ -275,7 +275,7 @@ export default function MealPlannerApp() {
       const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
       const parsed = parseUploadedRows(rows);
       if (!parsed.length) return alert("Could not detect meal data in Excel sheet.");
-      setMeals(parsed);
+      setMeals(ensureIds(parsed));
     } catch (e) {
       console.warn("Excel parser not available", e);
       alert("Excel parser not available here. Try CSV instead.");
@@ -481,16 +481,15 @@ function generateEmptyWeeks() {
     const saved = loadAutosave();
     if (saved) {
       didPromptRestoreRef.current = true;
-      if (window.confirm("Restore previous autosave?")) {
-        setMeals(saved.meals || []);
-        setWeeks(saved.weeks || generateEmptyWeeks());
-        setCooks(saved.cooks || DEFAULTS.cooks);
-        setStartDate(saved.startDate || STARTING_DEFAULT());
-        setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
-        setTextThreshold(saved.threshold ?? 3);
-        setMode(saved.mode || "dinners");
-        setSeed(saved.seed || "");
-      }
+      // Auto-restore last autosave for reliable persistence
+      setMeals(saved.meals || []);
+      setWeeks(saved.weeks || generateEmptyWeeks());
+      setCooks(saved.cooks || DEFAULTS.cooks);
+      setStartDate(saved.startDate || STARTING_DEFAULT());
+      setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
+      setTextThreshold(saved.threshold ?? 3);
+      setMode(saved.mode || "dinners");
+      setSeed(saved.seed || "");
     }
   }, []);
   // Debounced autosave on relevant state changes
@@ -552,39 +551,76 @@ function generateEmptyWeeks() {
   // Meals Editor state (moved up to avoid TDZ when showEditor is true)
   const [localMeals, setLocalMeals] = useState(meals);
   const [dirtyMeals, setDirtyMeals] = useState(false);
+  // Stable IDs for meals so edits persist under sorting/filtering
+  const idCounterRef = useRef(0);
+  function ensureIds(list) {
+    return (list || []).map((m) => (m && m._id ? m : { ...m, _id: `m${idCounterRef.current++}` }));
+  }
   // 1. Add missing Meals Editor handlers and sortedFilteredMeals
-  function handleEditMeal(idx, key, value) {
-    setLocalMeals(prev => prev.map((m, i) => i === idx ? { ...m, [key]: value } : m));
+  function handleEditMeal(idOrIdx, key, value) {
+    setLocalMeals(prev => {
+      const updated = prev.map((m, i) => (m._id === idOrIdx || i === idOrIdx) ? { ...m, [key]: value } : m);
+      setMeals(ensureIds(updated));
+      return updated;
+    });
     setDirtyMeals(true);
   }
-  function handleInferIngredients(idx) {
-    setLocalMeals(prev => prev.map((m, i) => i === idx ? { ...m, ingredients: ingredientHeuristics(m.name) } : m));
+  function handleInferIngredients(idOrIdx) {
+    setLocalMeals(prev => {
+      const updated = prev.map((m, i) => (m._id === idOrIdx || i === idOrIdx) ? { ...m, ingredients: ingredientHeuristics(m.name) } : m);
+      setMeals(ensureIds(updated));
+      return updated;
+    });
     setDirtyMeals(true);
   }
   function handleSort(key) {
     setSortKey(key);
     setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
   }
-  function handleDeleteMeal(idx) {
-    setLocalMeals(prev => prev.filter((_, i) => i !== idx));
+  function handleDeleteMeal(idOrIdx) {
+    setLocalMeals(prev => {
+      const updated = prev.filter((m, i) => !(m._id === idOrIdx || i === idOrIdx));
+      setMeals(ensureIds(updated));
+      return updated;
+    });
     setDirtyMeals(true);
   }
   function handleSaveMeals() {
-    setMeals(localMeals);
+    // Ensure meals have stable IDs, then persist
+    const withIds = ensureIds(localMeals);
+    setMeals(withIds);
+    // Build map by _id for robust syncing (fallback to name)
+    const idMap = new Map(withIds.map(m => [m._id, m]));
+    const updatedWeeks = (prev => prev.map(week => week.map(day => {
+      const sync = (meal) => {
+        if (!meal) return meal;
+        const updated = (meal._id && idMap.get(meal._id)) || withIds.find(m => m.name === meal.name);
+        return updated ? { ...meal, ...updated } : meal;
+      };
+      return { ...day, b: sync(day.b), l: sync(day.l), d: sync(day.d) };
+    })))(weeks);
+    setWeeks(updatedWeeks);
     setDirtyMeals(false);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
-    setTimeout(triggerAutosave, 0);
+    // Immediately persist the latest snapshot
+    try {
+      saveAutosave({ meals: withIds, weeks: updatedWeeks, cooks, startDate, repeatCap, threshold, mode, seed });
+    } catch {}
   }
   function handleDiscardMeals() {
     setLocalMeals(meals);
     setDirtyMeals(false);
   }
   function handleAddMeal() {
-    setLocalMeals(prev => [
-      ...prev,
-      { name: "New meal", avg: 3, type: "Dinner", ingredients: "", recipeUrl: "" }
-    ]);
+    setLocalMeals(prev => {
+      const updated = [
+        ...prev,
+        { _id: `m${idCounterRef.current++}`, name: "New meal", avg: 3, type: "Dinner", ingredients: "", recipeUrl: "" }
+      ];
+      setMeals(ensureIds(updated));
+      return updated;
+    });
     setDirtyMeals(true);
   }
   function isValidUrl(u) {
@@ -608,8 +644,8 @@ function generateEmptyWeeks() {
 
   // Meals Editor state fixes
 
-  // When meals change, update localMeals for discard
-  useEffect(() => { setLocalMeals(meals); }, [meals]);
+  // When meals change, ensure IDs and update localMeals for discard
+  useEffect(() => { setLocalMeals(ensureIds(meals)); }, [meals]);
 
   return (
     <ErrorBoundary>
@@ -777,13 +813,13 @@ function generateEmptyWeeks() {
                     {sortedFilteredMeals.map((m, idx) => (
                       <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50 hover:bg-sky-50/60">
                         <td className="p-3 text-gray-900 font-medium min-w-[320px] lg:min-w-[380px]">
-                          <input value={m.name} placeholder="e.g., Turkey chili (low-sodium)" onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'name', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
+                          <input value={m.name} placeholder="e.g., Turkey chili (low-sodium)" onChange={e => handleEditMeal(m._id, 'name', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
                         </td>
                         <td className="p-3 w-[88px]">
-                          <input type="number" step="0.1" min="0" max="10" value={m.avg} onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'avg', e.target.value)} className="w-20 border rounded-lg px-2 py-2 text-center bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
+                          <input type="number" step="0.1" min="0" max="10" value={m.avg} onChange={e => handleEditMeal(m._id, 'avg', e.target.value)} className="w-20 border rounded-lg px-2 py-2 text-center bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
                         </td>
                         <td className="p-3 min-w-[120px] sm:min-w-[160px]">
-                          <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'type', e.target.value)} className="border rounded-lg px-2 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500">
+                          <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(m._id, 'type', e.target.value)} className="border rounded-lg px-2 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500">
                             <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
                           </select>
                         </td>
@@ -792,15 +828,15 @@ function generateEmptyWeeks() {
                             <textarea
                               rows={4}
                               value={m.ingredients || ''}
-                              onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'ingredients', e.target.value)}
+                               onChange={e => handleEditMeal(m._id, 'ingredients', e.target.value)}
                               className="w-full border rounded-lg px-3 py-2 min-h-[96px] md:min-h-[120px] resize-none leading-snug bg-white text-gray-900 focus:ring-2 focus:ring-sky-500"
                               placeholder="Comma-separated: lean turkey, beans, tomato, onion"
                             />
-                            <Button type="button" className="bg-white" title="Suggest from meal name" onClick={() => handleInferIngredients(sourceMeals.indexOf(m))}><I.Edit/> Infer</Button>
+                            <Button type="button" className="bg-white" title="Suggest from meal name" onClick={() => handleInferIngredients(m._id)}>Infer</Button>
                           </div>
                         </td>
                         <td className="p-3 min-w-[220px]">
-                          <input value={m.recipeUrl || ''} placeholder="https://example.com/healthy-recipe" onChange={e => handleEditMeal(sourceMeals.indexOf(m), 'recipeUrl', e.target.value)} className={`w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500 ${m.recipeUrl && !isValidUrl(m.recipeUrl) ? 'border-yellow-400 bg-yellow-50' : ''}`} />
+                          <input value={m.recipeUrl || ''} placeholder="https://example.com/healthy-recipe" onChange={e => handleEditMeal(m._id, 'recipeUrl', e.target.value)} className={`w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500 ${m.recipeUrl && !isValidUrl(m.recipeUrl) ? 'border-yellow-400 bg-yellow-50' : ''}`} />
                           {m.recipeUrl && !isValidUrl(m.recipeUrl) && <div className="text-xs text-yellow-700 mt-1">URL may be invalid</div>}
                         </td>
                         <td className="p-3">
@@ -811,7 +847,7 @@ function generateEmptyWeeks() {
                           </div>
                         </td>
                         <td className="p-3">
-                          <Button type="button" className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" title="Delete meal" onClick={() => handleDeleteMeal(idx)}><I.X/></Button>
+                          <Button type="button" className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" title="Delete meal" onClick={() => handleDeleteMeal(m._id)}><I.X/></Button>
                         </td>
                       </tr>
                     ))}
@@ -1075,7 +1111,7 @@ function generateEmptyWeeks() {
                   const recipeUrl = String(m.recipeUrl || '').trim();
                   if (!name) { alert('Please enter a meal name'); return; }
                   if (isNaN(avg)) { alert('Please enter a numeric average score'); return; }
-                  setMeals(prev => [...prev, { name, avg, type, ingredients, recipeUrl }]);
+                  setMeals(prev => ensureIds([...prev, { _id: `m${idCounterRef.current++}`, name, avg, type, ingredients, recipeUrl }]));
                   setAddModal({ open: false, meal: { name: '', avg: 7, type: 'Dinner', ingredients: '', recipeUrl: '' } });
                   setDirtyMeals(true);
                   setTimeout(triggerAutosave, 0);
