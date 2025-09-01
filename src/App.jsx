@@ -870,6 +870,9 @@ function generateEmptyWeeks() {
                 <span className="px-3 py-2 rounded bg-sky-50 border border-sky-300 text-sm font-semibold text-sky-900 shadow-sm" style={{ minWidth: 120 }}>
                   Repeat cap: <span className="font-bold">{repeatCap}</span>
                 </span>
+                <span className="ml-auto px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-semibold">
+                  {filteredMeals.length} of {meals.length} meals available
+                </span>
               </div>
             </div>
 
