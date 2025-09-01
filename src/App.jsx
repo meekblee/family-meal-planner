@@ -197,10 +197,20 @@ const DEFAULTS = {
 const COOK_COLORS = {
   A: { chip: "bg-blue-100 text-blue-800 border-blue-200", text: "text-blue-700", border: "border-blue-300" },
   B: { chip: "bg-violet-100 text-violet-700 border-violet-200", text: "text-violet-700", border: "border-violet-300" },
+  C: { chip: "bg-green-100 text-green-700 border-green-200", text: "text-green-700", border: "border-green-300" },
+  D: { chip: "bg-amber-100 text-amber-700 border-amber-200", text: "text-amber-700", border: "border-amber-300" },
+  E: { chip: "bg-rose-100 text-rose-700 border-rose-200", text: "text-rose-700", border: "border-rose-300" },
   default: { chip: "bg-sky-100 text-sky-700 border-sky-200", text: "text-sky-700", border: "border-sky-300" },
 };
 const cookStyle = (id) => COOK_COLORS[id] || COOK_COLORS.default;
-const cookClass = (id) => (id === "A" ? "cookA" : id === "B" ? "cookB" : "cookDefault");
+const cookClass = (id) => {
+  if (id === "A") return "cookA";
+  if (id === "B") return "cookB";
+  if (id === "C") return "cookC";
+  if (id === "D") return "cookD";
+  if (id === "E") return "cookE";
+  return "cookDefault";
+};
 
 // =============== App ===============
 export default function MealPlannerApp() {
@@ -357,10 +367,10 @@ function generateEmptyWeeks() {
         // Cook assignment with availability
         const weekdayKey = weeksLocal[w][d].weekday;
         // Only include cooks available for this week and day
-        const availableCooks = cooksList.filter(c =>
-          (c.availabilityWeeks ? c.availabilityWeeks[w] !== false : true) &&
-          c.availability && c.availability[weekdayKey]
-        );
+        const availableCooks = cooksList.filter(c => {
+          const weekAvail = c.availabilityWeeks && c.availabilityWeeks[w] ? c.availabilityWeeks[w] : c.availability;
+          return weekAvail && weekAvail[weekdayKey] !== false;
+        });
         const ids = availableCooks.length ? availableCooks.map(c => c.id) : cooksList.map(c => c.id);
         weeksLocal[w][d].cook = ids[(d + w) % ids.length];
         // ...existing code for breakfast/lunch if needed...
@@ -742,7 +752,21 @@ function generateEmptyWeeks() {
                   <div key={idx} className={`day-card rounded-2xl border border-gray-200 overflow-hidden ${cookClass(day.cook)}`}>
                     <div className="bg-gray-50 px-3 py-2 flex justify-between items-center">
                       <div className="font-semibold text-gray-900">{day.label}</div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}>{cookName(day.cook)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}>{cookName(day.cook)}</span>
+                        <select
+                          className="border rounded px-2 py-1 text-xs bg-white text-gray-900"
+                          value={day.cook || (cooks[0]?.id || 'A')}
+                          onChange={(e) => {
+                            const newCook = e.target.value;
+                            setWeeks(prev => prev.map((week, wIdx) => wIdx === activeWeek ? week.map((d, dIdx) => dIdx === idx ? { ...d, cook: newCook } : d) : week));
+                            // Persist immediately for all users
+                            setTimeout(() => triggerAutosave(), 0);
+                          }}
+                        >
+                          {cooks.map(c => (<option key={c.id} value={c.id}>{c.name || c.id}</option>))}
+                        </select>
+                      </div>
                     </div>
                     <div className="p-3 space-y-2">
                       {mode === 'all' && (
@@ -1097,12 +1121,21 @@ function generateEmptyWeeks() {
             .cookA.day-card{border-left:6px solid #60a5fa}
             .cookB.day-card{border-left:6px solid #c4b5fd}
             .cookDefault.day-card{border-left:6px solid #93c5fd}
+            .cookC.day-card{border-left:6px solid #86efac}
+            .cookD.day-card{border-left:6px solid #fcd34d}
+            .cookE.day-card{border-left:6px solid #fca5a5}
             .cookA .day-body{background:#eff6ff}
             .cookB .day-body{background:#f5f3ff}
             .cookDefault .day-body{background:#f0f9ff}
+            .cookC .day-body{background:#ecfdf5}
+            .cookD .day-body{background:#fffbeb}
+            .cookE .day-body{background:#fff1f2}
             .cookA .meal-title{border-color:#bfdbfe}
             .cookB .meal-title{border-color:#ddd6fe}
             .cookDefault .meal-title{border-color:#bae6fd}
+            .cookC .meal-title{border-color:#bbf7d0}
+            .cookD .meal-title{border-color:#fde68a}
+            .cookE .meal-title{border-color:#fecaca}
             /* Week selector scroll snapping */
             .week-scroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:4px;border-radius:12px}
             .week-scroll::-webkit-scrollbar{height:8px}
