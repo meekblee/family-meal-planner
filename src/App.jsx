@@ -753,7 +753,26 @@ function generateEmptyWeeks() {
                     <div className="bg-gray-50 px-3 py-2 flex justify-between items-center">
                       <div className="font-semibold text-gray-900">{day.label}</div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}>{cookName(day.cook)}</span>
+                        <button
+                          type="button"
+                          className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}
+                          title="Tap to cycle cook"
+                          aria-label={`Current cook ${cookName(day.cook)}. Tap to cycle.`}
+                          onClick={() => {
+                            const wIdx = activeWeek;
+                            const weekdayKey = WEEKDAYS[idx % 7];
+                            // Available cooks for this week/day (fallback to all)
+                            const avail = cooks.filter(c => {
+                              const weekAvail = c.availabilityWeeks && c.availabilityWeeks[wIdx] ? c.availabilityWeeks[wIdx] : c.availability;
+                              return weekAvail && weekAvail[weekdayKey] !== false;
+                            });
+                            const order = (avail.length ? avail : cooks).map(c => c.id);
+                            const cur = day.cook || order[0];
+                            const next = order[(order.indexOf(cur) + 1) % order.length];
+                            setWeeks(prev => prev.map((week, iW) => iW === wIdx ? week.map((d, iD) => iD === idx ? { ...d, cook: next } : d) : week));
+                            setTimeout(() => triggerAutosave(), 0);
+                          }}
+                        >{cookName(day.cook)}</button>
                         <select
                           className="border rounded px-2 py-1 text-xs bg-white text-gray-900"
                           value={day.cook || (cooks[0]?.id || 'A')}
@@ -988,7 +1007,7 @@ function generateEmptyWeeks() {
                       <option key={wIdx} value={wIdx}>Week {wIdx + 1}</option>
                     ))}
                   </select>
-                  <div className="grid grid-cols-7 gap-1 ml-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 w-full ml-0 mt-1">
                     {WEEKDAYS.map((wd, i) => {
                       const weekIdx = c.selectedWeek ?? 0;
                       const weekAvail = c.availabilityWeeks?.[weekIdx] || { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true };
@@ -998,7 +1017,7 @@ function generateEmptyWeeks() {
                           key={wd}
                           title={`Cook is available on ${WEEKDAY_LABELS[i]}s`}
                           aria-label={`Toggle ${WEEKDAY_LABELS[i]} availability for ${c.name} in week ${weekIdx + 1}`}
-                          className={`w-10 h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                          className={`w-10 h-10 sm:w-10 sm:h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
                           tabIndex={0}
                           onClick={() => {
                             setCooks(prev => prev.map((x, j) => {
@@ -1012,7 +1031,7 @@ function generateEmptyWeeks() {
                                 }
                               };
                             }));
-                            setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+                            setTimeout(() => { fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); triggerAutosave(); }, 0);
                           }}
                           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') {
                             setCooks(prev => prev.map((x, j) => {
@@ -1026,7 +1045,7 @@ function generateEmptyWeeks() {
                                 }
                               };
                             }));
-                            setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
+                            setTimeout(() => { fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); triggerAutosave(); }, 0);
                           }}}
                         >{WEEKDAY_LABELS[i][0]}</button>
                       );
