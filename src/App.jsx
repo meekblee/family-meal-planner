@@ -687,7 +687,7 @@ function generateEmptyWeeks() {
       <div className="min-h-screen bg-gray-50 p-4">
   <div className="max-w-7xl mx-auto space-y-6 w-full px-2 md:px-0">
           {/* Header */}
-          <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 w-full px-2 md:px-0">
+          <header className="app-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 w-full px-2 md:px-0">
             <div>
               <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-gray-900 leading-tight">Family Meal Planner</h1>
               <p className="text-xs md:text-base text-gray-600">
@@ -710,24 +710,24 @@ function generateEmptyWeeks() {
           {/* Planner */}
           <Card className="w-full max-w-md md:max-w-3xl mx-auto px-2 md:px-6">
             <SectionTitle>4-Week Plan</SectionTitle>
-            <div className="flex flex-wrap items-center gap-2 mb-3 w-full overflow-x-auto">
-              <div className="flex items-center gap-2">
+            <div className="week-row flex flex-wrap items-center gap-2 mb-3 w-full">
+              <div className="flex items-center gap-2 w-full">
                 <span className="text-sm font-medium mr-2">View week:</span>
-                <div className="inline-flex rounded-xl border overflow-hidden bg-white w-full md:w-auto">
+                <div className="week-scroll rounded-xl border bg-white w-full md:w-auto" style={{ overflowX: 'auto' }}>
                   {Array.from({ length: 4 }).map((_, i) => (
                     <button
                       key={i}
                       aria-label={`Switch to Week ${i + 1}`}
                       title={`Show Week ${i + 1} plan`}
-                      className={`px-4 py-2 text-base font-semibold min-h-[44px] w-full md:w-auto focus:outline-none transition border-r last:border-r-0 ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} ${i === 0 ? 'rounded-l-xl' : ''} ${i === 3 ? 'rounded-r-xl' : ''}`}
-                      style={{ minWidth: 80 }}
+                      className={`week-btn px-4 py-2 text-base font-semibold min-h-[44px] focus:outline-none transition ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} rounded-xl mr-2`}
+                      style={{ minWidth: 88, flex: '0 0 auto' }}
                       onClick={() => setActiveWeek(i)}
                     >Week {i + 1}</button>
                   ))}
                 </div>
               </div>
               {/* Start date and Repeat cap chips */}
-              <div className="ml-4 flex gap-2 items-center">
+              <div className="chips ml-4 flex gap-2 items-center">
                 <span className="px-3 py-2 rounded bg-sky-50 border border-sky-300 text-sm font-semibold text-sky-900 shadow-sm" style={{ minWidth: 120 }}>
                   Start date: <span className="font-bold">{startDate}</span>
                 </span>
@@ -1103,6 +1103,19 @@ function generateEmptyWeeks() {
             .cookA .meal-title{border-color:#bfdbfe}
             .cookB .meal-title{border-color:#ddd6fe}
             .cookDefault .meal-title{border-color:#bae6fd}
+            /* Week selector scroll snapping */
+            .week-scroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:4px;border-radius:12px}
+            .week-scroll::-webkit-scrollbar{height:8px}
+            .week-scroll::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:8px}
+            .week-btn{scroll-snap-align:start}
+            /* Mobile tightening */
+            @media(max-width:640px){
+              .app-header{gap:8px;margin-bottom:12px}
+              .app-header h1{font-size:1.4rem;line-height:1.2;margin:0}
+              .week-row{margin-bottom:8px}
+              .chips{margin-left:0;gap:6px}
+              .chips span{padding:6px 8px;font-size:12px;min-width:auto}
+            }
             @media print { header { display:none !important } body { background:white } }
           `}</style>
         </div>
