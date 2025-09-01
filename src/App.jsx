@@ -1,17 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { loadPersisted, savePersisted, hasRemote } from "./persist";
 =======
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+import { loadPersisted, savePersisted, hasRemote } from "./persist";
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 
 // =============== Minimal UI atoms (no extra props) ===============
 const Button = ({ className = "", children, ...props }) => (
   <button
 <<<<<<< HEAD
+<<<<<<< HEAD
     className={`px-3 py-2 rounded-2xl shadow-sm border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 hover:shadow transition disabled:opacity-50 ${className}`}
 =======
     className={`px-3 py-2 rounded-2xl shadow-sm border border-gray-200 hover:shadow transition disabled:opacity-50 ${className}`}
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+    className={`px-3 py-2 rounded-2xl shadow-sm border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 hover:shadow transition disabled:opacity-50 ${className}`}
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
     {...props}
   >
     {children}
@@ -24,10 +32,14 @@ const SectionTitle = ({ children }) => (
   <h2 className="text-xl font-extrabold tracking-tight mb-2 text-gray-900">{children}</h2>
 );
 <<<<<<< HEAD
+<<<<<<< HEAD
 const I_OLD = {
 =======
 const I = {
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+const I_OLD = {
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   Cal: () => <span aria-hidden>📅</span>,
   DL: () => <span aria-hidden>⬇️</span>,
   List: () => <span aria-hidden>🧾</span>,
@@ -41,6 +53,9 @@ const I = {
 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 // Inline SVG icon set (no external deps)
 const IconBase = ({ children, className = "", title }) => (
   <svg
@@ -133,8 +148,11 @@ const I = {
   ),
 };
 
+<<<<<<< HEAD
 =======
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 // =============== Utilities ===============
 function rngFactory(seedStr) {
   let h = 0x811c9dc5;
@@ -286,6 +304,7 @@ const DEFAULTS = {
   ],
 };
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Stacey (A) back to blue hue
 const COOK_COLORS = {
   A: { chip: "bg-blue-100 text-blue-800 border-blue-200", text: "text-blue-700", border: "border-blue-300" },
@@ -315,14 +334,41 @@ const cookClass = (id) => {
 };
 const cookHeaderClass = (id) => COOK_HEADER[id] || COOK_HEADER.default;
 =======
+=======
+// Stacey (A) back to blue hue
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 const COOK_COLORS = {
   A: { chip: "bg-blue-100 text-blue-800 border-blue-200", text: "text-blue-700", border: "border-blue-300" },
-  B: { chip: "bg-purple-100 text-purple-800 border-purple-200", text: "text-purple-700", border: "border-purple-300" },
-  default: { chip: "bg-teal-100 text-teal-800 border-teal-200", text: "text-teal-700", border: "border-teal-300" },
+  B: { chip: "bg-violet-100 text-violet-700 border-violet-200", text: "text-violet-700", border: "border-violet-300" },
+  C: { chip: "bg-green-100 text-green-700 border-green-200", text: "text-green-700", border: "border-green-300" },
+  D: { chip: "bg-amber-100 text-amber-700 border-amber-200", text: "text-amber-700", border: "border-amber-300" },
+  E: { chip: "bg-rose-100 text-rose-700 border-rose-200", text: "text-rose-700", border: "border-rose-300" },
+  default: { chip: "bg-sky-100 text-sky-700 border-sky-200", text: "text-sky-700", border: "border-sky-300" },
+};
+// Solid header backgrounds for day cards per cook
+const COOK_HEADER = {
+  A: "bg-blue-600 text-white",
+  B: "bg-violet-600 text-white",
+  C: "bg-emerald-600 text-white",
+  D: "bg-amber-600 text-gray-900",
+  E: "bg-rose-600 text-white",
+  default: "bg-sky-600 text-white",
 };
 const cookStyle = (id) => COOK_COLORS[id] || COOK_COLORS.default;
+<<<<<<< HEAD
 const cookClass = (id) => (id === "A" ? "cookA" : id === "B" ? "cookB" : "cookDefault");
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+const cookClass = (id) => {
+  if (id === "A") return "cookA";
+  if (id === "B") return "cookB";
+  if (id === "C") return "cookC";
+  if (id === "D") return "cookD";
+  if (id === "E") return "cookE";
+  return "cookDefault";
+};
+const cookHeaderClass = (id) => COOK_HEADER[id] || COOK_HEADER.default;
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 
 // =============== App ===============
 export default function MealPlannerApp() {
@@ -339,12 +385,18 @@ export default function MealPlannerApp() {
   const [showEditor, setShowEditor] = useState(false);
   const [recipeModal, setRecipeModal] = useState({ open: false, meal: null });
 <<<<<<< HEAD
+<<<<<<< HEAD
   const [addModal, setAddModal] = useState({ open: false, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } });
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
 =======
   const [showSavedToast, setShowSavedToast] = useState(false);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+  const [addModal, setAddModal] = useState({ open: false, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } });
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   const [exportWeeks, setExportWeeks] = useState([]);
 
   const csvInputRef = useRef(null);
@@ -352,6 +404,9 @@ export default function MealPlannerApp() {
   const autosaveDebounceRef = useRef();
   const didPromptRestoreRef = useRef(false);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   const [nowTs, setNowTs] = useState(Date.now());
 
   const cookName = (id) => cooks.find((c) => c.id === id)?.name || id;
@@ -360,10 +415,13 @@ export default function MealPlannerApp() {
     const id = setInterval(() => setNowTs(Date.now()), 15000);
     return () => clearInterval(id);
   }, []);
+<<<<<<< HEAD
 =======
 
   const cookName = (id) => cooks.find((c) => c.id === id)?.name || id;
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 
   // Sample data so UI isn't empty
   useEffect(() => {
@@ -381,10 +439,14 @@ export default function MealPlannerApp() {
       { name: "Minestrone soup (low-sodium), whole-grain bread", avg: 7.1 },
     ].map((m) => ({ ...m, type: inferMealType(m.name), ingredients: ingredientHeuristics(m.name), recipeUrl: "" }));
 <<<<<<< HEAD
+<<<<<<< HEAD
     setMeals(ensureIds(sample));
 =======
     setMeals(sample);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+    setMeals(ensureIds(sample));
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   }, [meals.length]);
 
   const filteredMeals = useMemo(() => meals.filter((m) => (Number(m.avg) || 0) >= threshold), [meals, threshold]);
@@ -401,10 +463,14 @@ export default function MealPlannerApp() {
           const parsed = parseUploadedRows(rows);
           if (!parsed.length) return alert("Could not detect meal data in CSV.");
 <<<<<<< HEAD
+<<<<<<< HEAD
           setMeals(ensureIds(parsed));
 =======
           setMeals(parsed);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+          setMeals(ensureIds(parsed));
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
         },
       });
     } catch (e) {
@@ -418,6 +484,9 @@ export default function MealPlannerApp() {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
       // Pick the first sheet that yields recognizable meal rows; fallback to the one with most parsed rows
       let best = { name: null, rows: [], parsed: [] };
       for (const name of wb.SheetNames) {
@@ -434,6 +503,7 @@ export default function MealPlannerApp() {
         const rows0 = XLSX.utils.sheet_to_json(ws0, { defval: "" });
         return parseUploadedRows(rows0);
       })();
+<<<<<<< HEAD
       if (!parsed.length) return alert("Could not detect meal data in Excel sheet.");
       setMeals(ensureIds(parsed));
       alert(`Imported ${parsed.length} meals from Excel`);
@@ -445,6 +515,11 @@ export default function MealPlannerApp() {
       if (!parsed.length) return alert("Could not detect meal data in Excel sheet.");
       setMeals(parsed);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+      if (!parsed.length) return alert("Could not detect meal data in Excel sheet.");
+      setMeals(ensureIds(parsed));
+      alert(`Imported ${parsed.length} meals from Excel`);
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
     } catch (e) {
       console.warn("Excel parser not available", e);
       alert("Excel parser not available here. Try CSV instead.");
@@ -455,10 +530,14 @@ export default function MealPlannerApp() {
     const out = [];
     for (const r of rows || []) {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
       // Normalize headers by trimming and lowering keys
       const norm = {};
       Object.keys(r || {}).forEach(k => norm[String(k).trim().toLowerCase()] = r[k]);
       const name = norm["meal name"] || norm["name"] || norm["dish"] || r["Meal Name"] || r["name"] || r["Dish"] || r["dish"];
+<<<<<<< HEAD
       if (!name) continue;
       let avg = Number(norm["average score"] ?? norm["avg"] ?? norm["rating"] ?? r["Average Score"] ?? r["Avg"] ?? r["Rating"]);
 =======
@@ -466,6 +545,10 @@ export default function MealPlannerApp() {
       if (!name) continue;
       let avg = Number(r["Average Score"]);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+      if (!name) continue;
+      let avg = Number(norm["average score"] ?? norm["avg"] ?? norm["rating"] ?? r["Average Score"] ?? r["Avg"] ?? r["Rating"]);
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
       if (!avg || isNaN(avg)) {
         const keys = Object.keys(r);
         const voteKeys = keys.filter((k) => k !== "Dish" && k !== "Total Score" && k !== "Meal Name" && (/^.*@.*\..*$/.test(k) || /score/i.test(k)));
@@ -473,6 +556,7 @@ export default function MealPlannerApp() {
         if (votes.length) avg = votes.reduce((a, b) => a + b, 0) / votes.length;
         else if (Number(r["Total Score"])) avg = Number(r["Total Score"]) / 6; else avg = 3;
       }
+<<<<<<< HEAD
 <<<<<<< HEAD
       const type = norm["meal type"] || r["Meal Type"] || inferMealType(name);
       const ingredients = norm["ingredients"] || r["Ingredients"] || ingredientHeuristics(name);
@@ -482,6 +566,11 @@ export default function MealPlannerApp() {
       const ingredients = r["Ingredients"] || ingredientHeuristics(name);
       const recipeUrl = r["Recipe URL"] || r["Recipe"] || r["URL"] || "";
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+      const type = norm["meal type"] || r["Meal Type"] || inferMealType(name);
+      const ingredients = norm["ingredients"] || r["Ingredients"] || ingredientHeuristics(name);
+      const recipeUrl = norm["recipe url"] || norm["recipe"] || norm["url"] || r["Recipe URL"] || r["Recipe"] || r["URL"] || "";
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
       out.push({ name: String(name).trim(), avg: Number(avg), type, ingredients, recipeUrl: String(recipeUrl || "").trim() });
     }
     return out;
@@ -489,16 +578,22 @@ export default function MealPlannerApp() {
 
   // Planning
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 function generateEmptyWeeks() {
   const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   return Array.from({ length: 4 }, () => labels.map((l, i) => ({ label: l, weekday: WEEKDAYS[i] })));
 }
+<<<<<<< HEAD
 =======
   function generateEmptyWeeks() {
     const labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     return Array.from({ length: 4 }, () => labels.map((l) => ({ label: l })));
   }
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   function generateWithConstraints(pool, { dinnersOnly = DEFAULTS.dinnersOnly, seed = "", maxRepeatAcross4Weeks = DEFAULTS.maxRepeatAcross4Weeks, cookIds = ["A", "B"], cooksList = cooks }) {
     const rng = rngFactory(seed || "default");
     const weeksLocal = generateEmptyWeeks();
@@ -541,16 +636,22 @@ function generateEmptyWeeks() {
         const weekdayKey = weeksLocal[w][d].weekday;
         // Only include cooks available for this week and day
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
         const availableCooks = cooksList.filter(c => {
           const weekAvail = c.availabilityWeeks && c.availabilityWeeks[w] ? c.availabilityWeeks[w] : c.availability;
           return weekAvail && weekAvail[weekdayKey] !== false;
         });
+<<<<<<< HEAD
 =======
         const availableCooks = cooksList.filter(c =>
           (c.availabilityWeeks ? c.availabilityWeeks[w] !== false : true) &&
           c.availability && c.availability[weekdayKey]
         );
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
         const ids = availableCooks.length ? availableCooks.map(c => c.id) : cooksList.map(c => c.id);
         weeksLocal[w][d].cook = ids[(d + w) % ids.length];
         // ...existing code for breakfast/lunch if needed...
@@ -559,6 +660,9 @@ function generateEmptyWeeks() {
     return weeksLocal;
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   function assignDatesToWeeks(weeksIn, startDateStr, hour = DEFAULTS.dinnerHour, minutes = DEFAULTS.dinnerMinutes) {
     try {
       const base = new Date(startDateStr);
@@ -576,18 +680,25 @@ function generateEmptyWeeks() {
       return weeksIn;
     }
   }
+<<<<<<< HEAD
 =======
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   function fillWeeks({ dinnersOnly = DEFAULTS.dinnersOnly } = {}) {
     const pool = [...filteredMeals];
     if (!pool.length) return alert("No meals available above threshold.");
     const ids = cooks.map((c) => c.id);
     const filled = generateWithConstraints(pool, { dinnersOnly, seed, maxRepeatAcross4Weeks: repeatCap, cookIds: ids.length ? ids : ["A"] });
 <<<<<<< HEAD
+<<<<<<< HEAD
     setWeeks(assignDatesToWeeks(filled, startDate));
 =======
     setWeeks(filled);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+    setWeeks(assignDatesToWeeks(filled, startDate));
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   }
   function shuffleWeeks() { fillWeeks({ dinnersOnly: mode === "dinners" }); }
 
@@ -615,6 +726,9 @@ function generateEmptyWeeks() {
     return base + urlPart;
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   // Helpers for cook assignment adjustments
   function availableCookIdsFor(weekIndex, dayIndex) {
     const weekdayKey = WEEKDAYS[dayIndex % 7];
@@ -653,8 +767,11 @@ function generateEmptyWeeks() {
     });
     setTimeout(triggerAutosave, 0);
   }
+<<<<<<< HEAD
 =======
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   function downloadICS() {
     const selectedWeeks = exportWeeks.length ? exportWeeks : weeks.map((_, i) => i);
     const events = [];
@@ -690,10 +807,14 @@ function generateEmptyWeeks() {
   // Auto-fill once after meals load / cooks change
   useEffect(() => { if (!weeks[0][0].d) fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); }, [meals.length, repeatCap, cooks.length]);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   // Update dates when startDate changes
   useEffect(() => {
     setWeeks(prev => assignDatesToWeeks(prev, startDate));
   }, [startDate]);
+<<<<<<< HEAD
 
   // === AUTOSAVE HELPERS ===
   const AUTOSAVE_KEY = "familyMealPlannerAutosave"; // kept for reference in UI only
@@ -704,6 +825,12 @@ function generateEmptyWeeks() {
   const AUTOSAVE_KEY = "familyMealPlannerAutosave";
   function saveAutosave(state) {
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+
+  // === AUTOSAVE HELPERS ===
+  const AUTOSAVE_KEY = "familyMealPlannerAutosave"; // kept for reference in UI only
+  async function saveAutosave(state) {
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
     const minimal = {
       meals: state.meals,
       weeks: state.weeks,
@@ -716,15 +843,21 @@ function generateEmptyWeeks() {
     };
     try {
 <<<<<<< HEAD
+<<<<<<< HEAD
       await savePersisted(minimal);
       setLastSavedAt(Date.now());
 =======
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(minimal));
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+      await savePersisted(minimal);
+      setLastSavedAt(Date.now());
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
       setShowSavedToast(true);
       setTimeout(() => setShowSavedToast(false), 1200);
     } catch {}
   }
+<<<<<<< HEAD
 <<<<<<< HEAD
   async function loadAutosave() {
     try { return await loadPersisted(); } catch { return null; }
@@ -736,27 +869,54 @@ function generateEmptyWeeks() {
       return JSON.parse(raw);
     } catch { return null; }
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+  async function loadAutosave() {
+    try { return await loadPersisted(); } catch { return null; }
+  }
+  async function refreshFromCloud() {
+    try {
+      const saved = await loadPersisted();
+      if (!saved) { alert('No saved cloud data found.'); return; }
+      setMeals(saved.meals || []);
+      setWeeks(saved.weeks || generateEmptyWeeks());
+      setCooks(saved.cooks || DEFAULTS.cooks);
+      setStartDate(saved.startDate || STARTING_DEFAULT());
+      setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
+      setTextThreshold(saved.threshold ?? 3);
+      setMode(saved.mode || 'dinners');
+      setSeed(saved.seed || '');
+    } catch (e) {
+      alert('Could not refresh from cloud.');
+    }
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   }
 
   // Prompt to restore autosave on first mount
   useEffect(() => {
     if (didPromptRestoreRef.current) return;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
     didPromptRestoreRef.current = true;
     (async () => {
       const saved = await loadAutosave();
       if (saved) {
+<<<<<<< HEAD
 =======
     const saved = loadAutosave();
     if (saved) {
       didPromptRestoreRef.current = true;
       if (window.confirm("Restore previous autosave?")) {
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
         setMeals(saved.meals || []);
         setWeeks(saved.weeks || generateEmptyWeeks());
         setCooks(saved.cooks || DEFAULTS.cooks);
         setStartDate(saved.startDate || STARTING_DEFAULT());
         setRepeatCap(saved.repeatCap ?? DEFAULTS.maxRepeatAcross4Weeks);
+<<<<<<< HEAD
 <<<<<<< HEAD
         setTextThreshold(saved.threshold ?? 3);
         setMode(saved.mode || "dinners");
@@ -770,6 +930,13 @@ function generateEmptyWeeks() {
       }
     }
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+        setTextThreshold(saved.threshold ?? 3);
+        setMode(saved.mode || "dinners");
+        setSeed(saved.seed || "");
+      }
+    })();
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   }, []);
   // Debounced autosave on relevant state changes
   useEffect(() => {
@@ -784,6 +951,9 @@ function generateEmptyWeeks() {
     saveAutosave({ meals, weeks, cooks, startDate, repeatCap, threshold, mode, seed });
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   function savedLabel(ts) {
     if (!ts) return '';
     const secs = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -794,8 +964,11 @@ function generateEmptyWeeks() {
     const hrs = Math.floor(mins / 60);
     return `${hrs}h ago`;
   }
+<<<<<<< HEAD
 =======
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 
   // Cook list mgmt
   function addCook() {
@@ -811,6 +984,7 @@ function generateEmptyWeeks() {
         },
       ];
 <<<<<<< HEAD
+<<<<<<< HEAD
       return updated;
     });
     setTimeout(() => {
@@ -823,6 +997,14 @@ function generateEmptyWeeks() {
     });
     setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+      return updated;
+    });
+    setTimeout(() => {
+      fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly });
+      setTimeout(triggerAutosave, 100);
+    }, 0);
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   }
   function removeCook(id) {
     if (cooks.length <= 1) return;
@@ -848,6 +1030,9 @@ function generateEmptyWeeks() {
 
   const [mealSearch, setMealSearch] = useState("");
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   // Meals Editor state (moved up to avoid TDZ when showEditor is true)
   const [localMeals, setLocalMeals] = useState(meals);
   const [dirtyMeals, setDirtyMeals] = useState(false);
@@ -856,6 +1041,7 @@ function generateEmptyWeeks() {
   function ensureIds(list) {
     return (list || []).map((m) => (m && m._id ? m : { ...m, _id: `m${idCounterRef.current++}` }));
   }
+<<<<<<< HEAD
   // 1. Add missing Meals Editor handlers and sortedFilteredMeals
   function handleEditMeal(idOrIdx, key, value) {
     setLocalMeals(prev => {
@@ -877,14 +1063,34 @@ function generateEmptyWeeks() {
       return updated;
     });
 =======
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   // 1. Add missing Meals Editor handlers and sortedFilteredMeals
-  function handleEditMeal(idx, key, value) {
-    setMeals(prev => prev.map((m, i) => i === idx ? { ...m, [key]: value } : m));
+  function handleEditMeal(idOrIdx, key, value) {
+    setLocalMeals(prev => {
+      const updated = prev.map((m, i) => (m._id === idOrIdx || i === idOrIdx) ? { ...m, [key]: value } : m);
+      const nextMeals = ensureIds(updated);
+      setMeals(nextMeals);
+      // Immediate autosave of edits so they persist across reloads
+      try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
+      return updated;
+    });
     setDirtyMeals(true);
   }
+<<<<<<< HEAD
   function handleInferIngredients(idx) {
     setMeals(prev => prev.map((m, i) => i === idx ? { ...m, ingredients: ingredientHeuristics(m.name) } : m));
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+  function handleInferIngredients(idOrIdx) {
+    setLocalMeals(prev => {
+      const updated = prev.map((m, i) => (m._id === idOrIdx || i === idOrIdx) ? { ...m, ingredients: ingredientHeuristics(m.name) } : m);
+      const nextMeals = ensureIds(updated);
+      setMeals(nextMeals);
+      try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
+      return updated;
+    });
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
     setDirtyMeals(true);
   }
   function handleSort(key) {
@@ -892,6 +1098,9 @@ function generateEmptyWeeks() {
     setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
   function handleDeleteMeal(idOrIdx) {
     setLocalMeals(prev => {
       const updated = prev.filter((m, i) => !(m._id === idOrIdx || i === idOrIdx));
@@ -900,6 +1109,7 @@ function generateEmptyWeeks() {
       try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
       return updated;
     });
+<<<<<<< HEAD
     setDirtyMeals(true);
   }
   function handleSaveMeals() {
@@ -958,21 +1168,68 @@ function generateEmptyWeeks() {
 =======
   function handleDeleteMeal(idx) {
     setMeals(prev => prev.filter((_, i) => i !== idx));
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
     setDirtyMeals(true);
   }
   function handleSaveMeals() {
+    // Ensure meals have stable IDs, then persist
+    const withIds = ensureIds(localMeals);
+    setMeals(withIds);
+    // Build map by _id for robust syncing (fallback to name)
+    const idMap = new Map(withIds.map(m => [m._id, m]));
+    const updatedWeeks = (prev => prev.map(week => week.map(day => {
+      const sync = (meal) => {
+        if (!meal) return meal;
+        const updated = (meal._id && idMap.get(meal._id)) || withIds.find(m => m.name === meal.name);
+        return updated ? { ...meal, ...updated } : meal;
+      };
+      return { ...day, b: sync(day.b), l: sync(day.l), d: sync(day.d) };
+    })))(weeks);
+    setWeeks(updatedWeeks);
     setDirtyMeals(false);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
+    // Immediately persist the latest snapshot
+    try {
+      saveAutosave({ meals: withIds, weeks: updatedWeeks, cooks, startDate, repeatCap, threshold, mode, seed });
+    } catch {}
   }
   function handleDiscardMeals() {
-    setMeals(localMeals);
+    setLocalMeals(meals);
     setDirtyMeals(false);
+  }
+  function handleAddMeal() {
+    setLocalMeals(prev => {
+      const updated = [
+        ...prev,
+        { _id: `m${idCounterRef.current++}`, name: "New meal", avg: 3, type: "Dinner", ingredients: "", recipeUrl: "" }
+      ];
+      const nextMeals = ensureIds(updated);
+      setMeals(nextMeals);
+      try { saveAutosave({ meals: nextMeals, weeks, cooks, startDate, repeatCap, threshold, mode, seed }); } catch {}
+      return updated;
+    });
+    setDirtyMeals(true);
+  }
+  function isValidUrl(u) {
+    try {
+      const x = new URL(String(u || "").trim());
+      return x.protocol === "http:" || x.protocol === "https:";
+    } catch {
+      return false;
+    }
   }
   const [sortKey, setSortKey] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
+<<<<<<< HEAD
   const sortedFilteredMeals = meals
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+  const [isMobile, setIsMobile] = useState(false);
+  const sourceMeals = showEditor ? localMeals : meals;
+  const sortedFilteredMeals = sourceMeals
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
     .filter(m => m.name.toLowerCase().includes(mealSearch.toLowerCase()) || (m.type && m.type.toLowerCase().includes(mealSearch.toLowerCase())))
     .sort((a, b) => {
       if (!sortKey) return 0;
@@ -982,6 +1239,7 @@ function generateEmptyWeeks() {
 
   // Meals Editor state fixes
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   // When meals change, ensure IDs and update localMeals for discard
   useEffect(() => { setLocalMeals(ensureIds(meals)); }, [meals]);
@@ -1002,10 +1260,24 @@ function generateEmptyWeeks() {
   // When meals change, update localMeals for discard
   useEffect(() => { setLocalMeals(meals); }, [meals]);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+  // When meals change, ensure IDs and update localMeals for discard
+  useEffect(() => { setLocalMeals(ensureIds(meals)); }, [meals]);
+
+  // Track small screens for a friendlier mobile editor
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const cb = (e) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    if (mq.addEventListener) mq.addEventListener('change', cb); else mq.addListener(cb);
+    return () => { if (mq.removeEventListener) mq.removeEventListener('change', cb); else mq.removeListener(cb); };
+  }, []);
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
 
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 p-4">
+<<<<<<< HEAD
 <<<<<<< HEAD
   <div className="max-w-7xl mx-auto space-y-6 w-full px-2 md:px-0">
           {/* Header */}
@@ -1028,22 +1300,40 @@ function generateEmptyWeeks() {
               </div>
 =======
         <div className="max-w-7xl mx-auto space-y-6">
+=======
+  <div className="max-w-7xl mx-auto space-y-6 w-full px-2 md:px-0">
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
           {/* Header */}
-          <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <header className="app-header flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 w-full px-2 md:px-0">
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">Family Meal Planner</h1>
-              <p className="text-sm md:text-base text-gray-600">
-                4-week rotation • dinners at 6:00 PM • {cooks.map(c => c.name).join(' & ')}
+              <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-gray-900 leading-tight">Family Meal Planner</h1>
+              <p className="text-xs md:text-base text-gray-600">
+                4-week rotation • dinners at 6:00 PM<br className="md:hidden" />
+                <span className="block md:inline">{cooks.map(c => c.name).join(' & ')}</span>
               </p>
             </div>
+<<<<<<< HEAD
             <div className="flex gap-2">
               <Button className="bg-gray-900 text-white hover:opacity-90" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
               <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto items-stretch md:items-center">
+              <Button className="!bg-gray-900 !text-white hover:!bg-gray-900 hover:!opacity-90 w-full md:w-auto min-h-[44px] text-base" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
+              <Button className="!bg-indigo-600 !text-white hover:!bg-indigo-700 w-full md:w-auto min-h-[44px] text-base" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
+              <div className="flex items-center justify-between md:justify-start gap-2 w-full md:w-auto">
+                <Button className="bg-white text-gray-700 border border-gray-300 w-full md:w-auto min-h-[44px]" onClick={triggerAutosave}><I.DL/> Save now</Button>
+                <Button className="bg-white text-gray-700 border border-gray-300 w-full md:w-auto min-h-[44px]" onClick={refreshFromCloud} title="Reload latest cloud state">↻ Refresh</Button>
+                {!!lastSavedAt && (
+                  <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">Saved {savedLabel(lastSavedAt)}</span>
+                )}
+              </div>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
             </div>
           </header>
 
           {/* Planner */}
+<<<<<<< HEAD
 <<<<<<< HEAD
           <Card className="w-full max-w-md md:max-w-3xl mx-auto px-2 md:px-6">
             <SectionTitle>4-Week Plan</SectionTitle>
@@ -1053,17 +1343,25 @@ function generateEmptyWeeks() {
                 <div className="week-scroll rounded-xl border bg-white w-full md:w-auto" style={{ overflowX: 'auto' }}>
 =======
           <Card>
+=======
+          <Card className="w-full max-w-md md:max-w-3xl mx-auto px-2 md:px-6">
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
             <SectionTitle>4-Week Plan</SectionTitle>
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <div className="flex items-center gap-2">
+            <div className="week-row flex flex-wrap items-center gap-2 mb-3 w-full">
+              <div className="flex items-center gap-2 w-full">
                 <span className="text-sm font-medium mr-2">View week:</span>
+<<<<<<< HEAD
                 <div className="inline-flex rounded-xl border overflow-hidden bg-white">
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                <div className="week-scroll rounded-xl border bg-white w-full md:w-auto" style={{ overflowX: 'auto' }}>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                   {Array.from({ length: 4 }).map((_, i) => (
                     <button
                       key={i}
                       aria-label={`Switch to Week ${i + 1}`}
                       title={`Show Week ${i + 1} plan`}
+<<<<<<< HEAD
 <<<<<<< HEAD
                       className={`week-btn px-4 py-2 text-base font-semibold min-h-[44px] focus:outline-none transition ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} rounded-xl mr-2`}
                       style={{ minWidth: 88, flex: '0 0 auto' }}
@@ -1071,12 +1369,17 @@ function generateEmptyWeeks() {
                       className={`px-6 py-2 text-sm focus:outline-none transition border-r last:border-r-0 font-semibold ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} ${i === 0 ? 'rounded-l-xl' : ''} ${i === 3 ? 'rounded-r-xl' : ''}`}
                       style={{ minWidth: 80 }}
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                      className={`week-btn px-4 py-2 text-base font-semibold min-h-[44px] focus:outline-none transition ${activeWeek === i ? 'border-2 border-blue-600 bg-blue-100 text-blue-900' : 'border border-gray-200 text-gray-500 bg-white'} rounded-xl mr-2`}
+                      style={{ minWidth: 88, flex: '0 0 auto' }}
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                       onClick={() => setActiveWeek(i)}
                     >Week {i + 1}</button>
                   ))}
                 </div>
               </div>
               {/* Start date and Repeat cap chips */}
+<<<<<<< HEAD
 <<<<<<< HEAD
               <div className="chips ml-4 flex gap-2 items-center">
                 <span className="px-3 py-2 rounded bg-sky-50 border border-sky-300 text-sm font-semibold text-sky-900 shadow-sm" style={{ minWidth: 120 }}>
@@ -1091,12 +1394,22 @@ function generateEmptyWeeks() {
 =======
               <div className="ml-4 flex gap-2 items-center">
                 <span className="px-3 py-2 rounded bg-blue-50 border border-blue-300 text-sm font-semibold text-blue-900 shadow-sm" style={{ minWidth: 120 }}>
+=======
+              <div className="chips ml-4 flex gap-2 items-center">
+                <span className="px-3 py-2 rounded bg-sky-50 border border-sky-300 text-sm font-semibold text-sky-900 shadow-sm" style={{ minWidth: 120 }}>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                   Start date: <span className="font-bold">{startDate}</span>
                 </span>
-                <span className="px-3 py-2 rounded bg-blue-50 border border-blue-300 text-sm font-semibold text-blue-900 shadow-sm" style={{ minWidth: 120 }}>
+                <span className="px-3 py-2 rounded bg-sky-50 border border-sky-300 text-sm font-semibold text-sky-900 shadow-sm" style={{ minWidth: 120 }}>
                   Repeat cap: <span className="font-bold">{repeatCap}</span>
                 </span>
+<<<<<<< HEAD
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                <span className="ml-auto px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-semibold">
+                  {filteredMeals.length} of {meals.length} meals available
+                </span>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
               </div>
             </div>
 
@@ -1104,6 +1417,9 @@ function generateEmptyWeeks() {
               {weeks[activeWeek].map((day, idx) => (
                   <div key={idx} className={`day-card rounded-2xl border border-gray-200 overflow-hidden ${cookClass(day.cook)}`}>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                     <div className={`${cookHeaderClass(day.cook)} px-3 py-2 flex justify-between items-center`}> 
                       <div className="font-semibold">{day.label}</div>
                       <div className="flex items-center gap-2">
@@ -1131,6 +1447,7 @@ function generateEmptyWeeks() {
                           {cooks.map(c => (<option key={c.id} value={c.id}>{c.name || c.id}</option>))}
                         </select>
                       </div>
+<<<<<<< HEAD
                     </div>
                     <div className="p-3 space-y-2">
                       {mode === 'all' && (
@@ -1151,23 +1468,29 @@ function generateEmptyWeeks() {
                     <div className="bg-gray-50 px-3 py-2 flex justify-between items-center">
                       <div className="font-semibold text-gray-900">{day.label}</div>
                       <span className={`px-2 py-0.5 rounded-full text-xs border ${cookStyle(day.cook).chip}`}>{cookName(day.cook)}</span>
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                     </div>
                     <div className="p-3 space-y-2">
                       {mode === 'all' && (
-                        <div className="bg-yellow-50 rounded-lg p-2">
-                          <div className="text-xs text-gray-600">Breakfast</div>
-                          <div className="font-medium">{(day.b && day.b.name) || '—'}</div>
+                        <div className="rounded-lg p-2 bg-amber-600 text-white">
+                          <div className="text-xs font-semibold">Breakfast</div>
+                          <div className="font-semibold">{(day.b && day.b.name) || '—'}</div>
                         </div>
                       )}
                       {mode === 'all' && (
-                        <div className="bg-blue-50 rounded-lg p-2">
-                          <div className="text-xs text-gray-600">Lunch</div>
-                          <div className="font-medium">{(day.l && day.l.name) || '—'}</div>
+                        <div className="rounded-lg p-2 bg-sky-600 text-white">
+                          <div className="text-xs font-semibold">Lunch</div>
+                          <div className="font-semibold">{(day.l && day.l.name) || '—'}</div>
                         </div>
                       )}
                       <div className="rounded-lg p-2 day-body">
+<<<<<<< HEAD
                         <div className="text-xs text-gray-600 flex items-center gap-2">Dinner
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                        <div className="flex items-center gap-2"><span className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-indigo-600 text-white">Dinner</span>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                           <button
                             className="ml-2 px-2 py-1 rounded hover:bg-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                             title="Edit or Replace Dinner"
@@ -1240,6 +1563,7 @@ function generateEmptyWeeks() {
                   value={mealSearch || ''}
                   onChange={e => setMealSearch(e.target.value)}
 <<<<<<< HEAD
+<<<<<<< HEAD
                   className="border rounded-xl px-3 py-2 w-full sm:w-64 shadow-sm bg-white text-gray-900 focus:ring-2 focus:ring-sky-500"
                 />
                 <Button className="bg-sky-500 text-white hover:bg-sky-600" onClick={() => setAddModal({ open: true, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } })}><I.Plus/> Add meal</Button>
@@ -1298,16 +1622,58 @@ function generateEmptyWeeks() {
                       <th className="text-left p-3 font-semibold">Delete</th>
 =======
                   className="border rounded px-2 py-1 w-64"
+=======
+                  className="border rounded-xl px-3 py-2 w-full sm:w-64 shadow-sm bg-white text-gray-900 focus:ring-2 focus:ring-sky-500"
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                 />
-                <Button onClick={handleAddMeal}><I.Plus/> Add meal</Button>
+                <Button className="bg-sky-500 text-white hover:bg-sky-600" onClick={() => setAddModal({ open: true, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } })}><I.Plus/> Add meal</Button>
               </div>
             )}
-            {/* Meals table with sorting, filtering, infer, delete, and URL validation */}
-            {showEditor && (
-              <div className="overflow-auto max-h-[320px] border rounded">
+            {/* Mobile card editor */}
+            {showEditor && isMobile && (
+              <div className="space-y-3">
+                {sortedFilteredMeals.map((m, idx) => (
+                  <div key={m._id || idx} className="border rounded-2xl p-3 bg-white shadow-sm">
+                    <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-2">Meal</div>
+                    <input value={m.name} onChange={e => handleEditMeal(m._id, 'name', e.target.value)} className="w-full border rounded-xl px-3 py-2 mb-2" placeholder="Meal name" />
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-1">Avg</div>
+                        <input type="number" step="0.1" min="0" max="10" value={m.avg} onChange={e => handleEditMeal(m._id, 'avg', e.target.value)} className="w-full border rounded-xl px-2 py-2 text-center" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-1">Type</div>
+                        <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(m._id, 'type', e.target.value)} className="w-full border rounded-xl px-2 py-2 bg-white">
+                          <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-1">Ingredients</div>
+                    <textarea rows={4} value={m.ingredients || ''} onChange={e => handleEditMeal(m._id, 'ingredients', e.target.value)} className="w-full border rounded-xl px-3 py-2 mb-2" placeholder="Comma-separated items" />
+                    <div className="flex justify-between items-center mb-2">
+                      <Button type="button" className="bg-white" onClick={() => handleInferIngredients(m._id)}>Infer</Button>
+                      <div className="flex gap-1 items-center">
+                        {[1,2,3,4,5].map(star => (
+                          <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'}`} onClick={() => handleEditMeal(m._id, 'rating', star)}>★</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-blue-600 text-white mb-1">Recipe URL</div>
+                    <input value={m.recipeUrl || ''} onChange={e => handleEditMeal(m._id, 'recipeUrl', e.target.value)} placeholder="https://..." className="w-full border rounded-xl px-3 py-2 mb-2" />
+                    <div className="flex justify-end">
+                      <Button type="button" className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" title="Delete meal" onClick={() => handleDeleteMeal(m._id)}><I.X/> Delete</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Desktop/tablet editor */}
+            {showEditor && !isMobile && (
+              <div className="overflow-auto max-h-[420px] border rounded-xl shadow-sm">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-gray-200 text-gray-800 sticky top-0">
+                  <thead className="bg-gradient-to-r from-pink-50 to-sky-50 text-gray-800 sticky top-0">
                     <tr>
+<<<<<<< HEAD
                       <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('name')}>Meal Name {sortKey==='name' ? (sortDir==='asc' ? '▲' : '▼') : ''}</th>
                       <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('avg')}>Avg {sortKey==='avg' ? (sortDir==='desc' ? '▼' : '▲') : ''}</th>
                       <th className="text-left p-2 cursor-pointer" onClick={() => handleSort('type')}>Type</th>
@@ -1316,10 +1682,20 @@ function generateEmptyWeeks() {
                       <th className="text-left p-2">Rating</th>
                       <th className="text-left p-2">Delete</th>
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('name')}>Meal {sortKey==='name' ? (sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('avg')}>Avg {sortKey==='avg' ? (sortDir==='desc' ? '▼' : '▲') : ''}</th>
+                      <th className="text-left p-3 cursor-pointer font-semibold" onClick={() => handleSort('type')}>Type</th>
+                      <th className="text-left p-3 font-semibold">Ingredients</th>
+                      <th className="text-left p-3 font-semibold">Recipe</th>
+                      <th className="text-left p-3 font-semibold">Rating</th>
+                      <th className="text-left p-3 font-semibold">Delete</th>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                     </tr>
                   </thead>
                   <tbody>
                     {sortedFilteredMeals.map((m, idx) => (
+<<<<<<< HEAD
 <<<<<<< HEAD
                       <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50 hover:bg-sky-50/60">
                         <td className="p-3 text-gray-900 font-medium min-w-[320px] lg:min-w-[380px]">
@@ -1362,33 +1738,51 @@ function generateEmptyWeeks() {
                       <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50">
                         <td className="p-2 text-gray-900 font-medium">
                           <input value={m.name} onChange={e => handleEditMeal(idx, 'name', e.target.value)} className="w-full border rounded px-2 py-1" />
+=======
+                      <tr key={m._id || idx} className="border-t odd:bg-white even:bg-gray-50 hover:bg-sky-50/60">
+                        <td className="p-3 text-gray-900 font-medium min-w-[320px] lg:min-w-[380px]">
+                          <input value={m.name} placeholder="e.g., Turkey chili (low-sodium)" onChange={e => handleEditMeal(m._id, 'name', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                         </td>
-                        <td className="p-2">
-                          <input type="number" step="0.1" value={m.avg} onChange={e => handleEditMeal(idx, 'avg', e.target.value)} className="w-full border rounded px-2 py-1" />
+                        <td className="p-3 w-[88px]">
+                          <input type="number" step="0.1" min="0" max="10" value={m.avg} onChange={e => handleEditMeal(m._id, 'avg', e.target.value)} className="w-20 border rounded-lg px-2 py-2 text-center bg-white text-gray-900 focus:ring-2 focus:ring-sky-500" />
                         </td>
-                        <td className="p-2">
-                          <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(idx, 'type', e.target.value)} className="border rounded px-2 py-1">
+                        <td className="p-3 min-w-[120px] sm:min-w-[160px]">
+                          <select value={m.type || 'Dinner'} onChange={e => handleEditMeal(m._id, 'type', e.target.value)} className="border rounded-lg px-2 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500">
                             <option>Breakfast</option><option>Lunch</option><option>Dinner</option>
                           </select>
                         </td>
-                        <td className="p-2 flex gap-1 items-center">
-                          <input value={m.ingredients || ''} onChange={e => handleEditMeal(idx, 'ingredients', e.target.value)} className="w-full border rounded px-2 py-1" />
-                          <Button type="button" title="Infer ingredients" onClick={() => handleInferIngredients(idx)}><I.Edit/> Infer</Button>
+                        <td className="p-3 min-w-[360px] lg:min-w-[480px]">
+                          <div className="flex gap-2 items-start">
+                            <textarea
+                              rows={4}
+                              value={m.ingredients || ''}
+                               onChange={e => handleEditMeal(m._id, 'ingredients', e.target.value)}
+                              className="w-full border rounded-lg px-3 py-2 min-h-[96px] md:min-h-[120px] resize-none leading-snug bg-white text-gray-900 focus:ring-2 focus:ring-sky-500"
+                              placeholder="Comma-separated: lean turkey, beans, tomato, onion"
+                            />
+                            <Button type="button" className="bg-white" title="Suggest from meal name" onClick={() => handleInferIngredients(m._id)}>Infer</Button>
+                          </div>
                         </td>
-                        <td className="p-2">
-                          <input value={m.recipeUrl || ''} onChange={e => handleEditMeal(idx, 'recipeUrl', e.target.value)} className={`w-full border rounded px-2 py-1 ${m.recipeUrl && !isValidUrl(m.recipeUrl) ? 'border-yellow-400 bg-yellow-50' : ''}`} />
-                          {m.recipeUrl && !isValidUrl(m.recipeUrl) && <div className="text-xs text-yellow-700">URL may be invalid</div>}
+                        <td className="p-3 min-w-[220px]">
+                          <input value={m.recipeUrl || ''} placeholder="https://example.com/healthy-recipe" onChange={e => handleEditMeal(m._id, 'recipeUrl', e.target.value)} className={`w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-sky-500 ${m.recipeUrl && !isValidUrl(m.recipeUrl) ? 'border-yellow-400 bg-yellow-50' : ''}`} />
+                          {m.recipeUrl && !isValidUrl(m.recipeUrl) && <div className="text-xs text-yellow-700 mt-1">URL may be invalid</div>}
                         </td>
-                        <td className="p-2">
-                          <div className="flex gap-1">
+                        <td className="p-3">
+                          <div className="flex gap-1 items-center">
                             {[1,2,3,4,5].map(star => (
-                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-400' : 'text-gray-300'}`} onClick={() => handleEditMeal(idx, 'rating', star)}>★</button>
+                              <button key={star} className={`text-xl ${m.rating >= star ? 'text-yellow-500' : 'text-gray-400'} bg-transparent border-0 hover:scale-105 transition-transform`} onClick={() => handleEditMeal(m._id, 'rating', star)}>★</button>
                             ))}
                           </div>
                         </td>
+<<<<<<< HEAD
                         <td className="p-2">
                           <Button type="button" title="Delete meal" onClick={() => handleDeleteMeal(idx)}><I.X/></Button>
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                        <td className="p-3">
+                          <Button type="button" className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" title="Delete meal" onClick={() => handleDeleteMeal(m._id)}><I.X/></Button>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                         </td>
                       </tr>
                     ))}
@@ -1399,6 +1793,7 @@ function generateEmptyWeeks() {
             {/* Sticky bottom bar for Save/Discard */}
             {showEditor && dirtyMeals && (
 <<<<<<< HEAD
+<<<<<<< HEAD
               <div className="sticky bottom-0 left-0 w-full bg-blue-700 text-white shadow flex justify-end gap-2 p-3 z-10">
                 <Button className="bg-blue-600 text-white" onClick={handleSaveMeals}><I.Edit/> Save changes</Button>
                 <Button className="bg-white text-blue-700" onClick={handleDiscardMeals}><I.X/> Discard edits</Button>
@@ -1407,6 +1802,11 @@ function generateEmptyWeeks() {
                 <Button className="bg-blue-600 text-white" onClick={handleSaveMeals}><I.Edit/> Save changes</Button>
                 <Button className="bg-gray-200" onClick={handleDiscardMeals}><I.X/> Discard edits</Button>
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+              <div className="sticky bottom-0 left-0 w-full bg-blue-700 text-white shadow flex justify-end gap-2 p-3 z-10">
+                <Button className="bg-blue-600 text-white" onClick={handleSaveMeals}><I.Edit/> Save changes</Button>
+                <Button className="bg-white text-blue-700" onClick={handleDiscardMeals}><I.X/> Discard edits</Button>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
               </div>
             )}
           </Card>
@@ -1418,6 +1818,7 @@ function generateEmptyWeeks() {
             <div className="space-y-2">
               {cooks.map((c, idx) => (
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="w-8 text-sm text-gray-500">{c.id}:</span>
                   <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-full sm:w-56 bg-white text-gray-900" />
@@ -1426,6 +1827,11 @@ function generateEmptyWeeks() {
                   <span className="w-8 text-sm text-gray-500">{c.id}:</span>
                   <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-56 bg-white text-gray-900" />
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="w-8 text-sm text-gray-500">{c.id}:</span>
+                  <input value={c.name} onChange={(e) => setCooks((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))} className="border rounded px-2 py-1 w-full sm:w-56 bg-white text-gray-900" />
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                   <select
                     className="border rounded px-2 py-1 ml-2 text-sm bg-white text-gray-900"
                     value={c.selectedWeek ?? 0}
@@ -1439,10 +1845,14 @@ function generateEmptyWeeks() {
                     ))}
                   </select>
 <<<<<<< HEAD
+<<<<<<< HEAD
                   <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 w-full ml-0 mt-1">
 =======
                   <div className="grid grid-cols-7 gap-1 ml-2">
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 w-full ml-0 mt-1">
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                     {WEEKDAYS.map((wd, i) => {
                       const weekIdx = c.selectedWeek ?? 0;
                       const weekAvail = c.availabilityWeeks?.[weekIdx] || { mon:true, tue:true, wed:true, thu:true, fri:true, sat:true, sun:true };
@@ -1453,10 +1863,14 @@ function generateEmptyWeeks() {
                           title={`Cook is available on ${WEEKDAY_LABELS[i]}s`}
                           aria-label={`Toggle ${WEEKDAY_LABELS[i]} availability for ${c.name} in week ${weekIdx + 1}`}
 <<<<<<< HEAD
+<<<<<<< HEAD
                           className={`w-9 h-9 sm:w-10 sm:h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
 =======
                           className={`w-10 h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                          className={`w-9 h-9 sm:w-10 sm:h-10 rounded ${isAvailable ? 'bg-green-200' : 'bg-gray-200'} border border-gray-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                           tabIndex={0}
                           onClick={() => {
                             setCooks(prev => prev.map((x, j) => {
@@ -1471,10 +1885,14 @@ function generateEmptyWeeks() {
                               };
                             }));
 <<<<<<< HEAD
+<<<<<<< HEAD
                             setTimeout(() => { fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); triggerAutosave(); }, 0);
 =======
                             setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                            setTimeout(() => { fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); triggerAutosave(); }, 0);
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                           }}
                           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') {
                             setCooks(prev => prev.map((x, j) => {
@@ -1489,10 +1907,14 @@ function generateEmptyWeeks() {
                               };
                             }));
 <<<<<<< HEAD
+<<<<<<< HEAD
                             setTimeout(() => { fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); triggerAutosave(); }, 0);
 =======
                             setTimeout(() => fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }), 0);
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                            setTimeout(() => { fillWeeks({ dinnersOnly: DEFAULTS.dinnersOnly }); triggerAutosave(); }, 0);
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                           }}}
                         >{WEEKDAY_LABELS[i][0]}</button>
                       );
@@ -1525,6 +1947,7 @@ function generateEmptyWeeks() {
                   <div className="flex gap-2">
                     <Button onClick={() => csvInputRef.current?.click()}><I.Upload/> Upload CSV</Button>
 <<<<<<< HEAD
+<<<<<<< HEAD
                     <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => { if(e.target.files){ handleCSV(e.target.files[0]); e.target.value = ""; } }} />
                     <Button onClick={() => xlsInputRef.current?.click()}><I.Upload/> Upload Excel</Button>
                     <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { if(e.target.files){ handleExcel(e.target.files[0]); e.target.value = ""; } }} />
@@ -1533,6 +1956,11 @@ function generateEmptyWeeks() {
                     <Button onClick={() => xlsInputRef.current?.click()}><I.Upload/> Upload Excel</Button>
                     <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => e.target.files && handleExcel(e.target.files[0])} />
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+                    <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => { if(e.target.files){ handleCSV(e.target.files[0]); e.target.value = ""; } }} />
+                    <Button onClick={() => xlsInputRef.current?.click()}><I.Upload/> Upload Excel</Button>
+                    <input ref={xlsInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { if(e.target.files){ handleExcel(e.target.files[0]); e.target.value = ""; } }} />
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
                   </div>
                 </div>
                 <div>
@@ -1581,15 +2009,20 @@ function generateEmptyWeeks() {
                 ))}
               </select>
 <<<<<<< HEAD
+<<<<<<< HEAD
               <Button className="!bg-indigo-600 !text-white hover:!bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Selected Weeks (.ics)</span></Button>
 =======
               <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Selected Weeks (.ics)</span></Button>
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+              <Button className="!bg-indigo-600 !text-white hover:!bg-indigo-700" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Selected Weeks (.ics)</span></Button>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
             </div>
           </Card>
 
           {/* Inline styles for readability and color accents */}
           <style>{`
+<<<<<<< HEAD
 <<<<<<< HEAD
             .meal-title{display:block;background:#fff;border:1px solid #bae6fd;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
             .meal-title:hover{text-decoration:underline}
@@ -1628,19 +2061,48 @@ function generateEmptyWeeks() {
             }
 =======
             .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+=======
+            .meal-title{display:block;background:#fff;border:1px solid #bae6fd;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
             .meal-title:hover{text-decoration:underline}
             .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
             .day-card{position:relative}
-            .cookA.day-card{border-left:6px solid #2563eb}
-            .cookB.day-card{border-left:6px solid #7c3aed}
-            .cookDefault.day-card{border-left:6px solid #14b8a6}
+            .cookA.day-card{border-left:6px solid #60a5fa}
+            .cookB.day-card{border-left:6px solid #c4b5fd}
+            .cookDefault.day-card{border-left:6px solid #93c5fd}
+            .cookC.day-card{border-left:6px solid #86efac}
+            .cookD.day-card{border-left:6px solid #fcd34d}
+            .cookE.day-card{border-left:6px solid #fca5a5}
             .cookA .day-body{background:#eff6ff}
             .cookB .day-body{background:#f5f3ff}
-            .cookDefault .day-body{background:#ecfdf5}
+            .cookDefault .day-body{background:#f0f9ff}
+            .cookC .day-body{background:#ecfdf5}
+            .cookD .day-body{background:#fffbeb}
+            .cookE .day-body{background:#fff1f2}
             .cookA .meal-title{border-color:#bfdbfe}
             .cookB .meal-title{border-color:#ddd6fe}
+<<<<<<< HEAD
             .cookDefault .meal-title{border-color:#cfe9d5}
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+            .cookDefault .meal-title{border-color:#bae6fd}
+            .cookC .meal-title{border-color:#bbf7d0}
+            .cookD .meal-title{border-color:#fde68a}
+            .cookE .meal-title{border-color:#fecaca}
+            /* Week selector scroll snapping */
+            .week-scroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:4px;border-radius:12px}
+            .week-scroll::-webkit-scrollbar{height:8px}
+            .week-scroll::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:8px}
+            .week-btn{scroll-snap-align:start}
+            /* Mobile tightening */
+            @media(max-width:640px){
+              .app-header{gap:8px;margin-bottom:12px}
+              .app-header h1{font-size:1.4rem;line-height:1.2;margin:0}
+              .week-row{margin-bottom:8px}
+              .chips{margin-left:0;gap:6px}
+              .chips span{padding:6px 8px;font-size:12px;min-width:auto}
+            }
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
             @media print { header { display:none !important } body { background:white } }
           `}</style>
         </div>
@@ -1654,12 +2116,17 @@ function generateEmptyWeeks() {
                 <button className="text-gray-500" onClick={() => setRecipeModal({ open: false, meal: null })}><I.X/></button>
               </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
               <div className="text-sm font-semibold text-blue-900 mb-2">Ingredients (editable in the table above):</div>
               <div className="text-sm bg-blue-600 text-white rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
 =======
               <div className="text-sm text-gray-600 mb-3">Ingredients (editable in the table above):</div>
               <div className="text-sm bg-gray-50 border rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+              <div className="text-sm font-semibold text-blue-900 mb-2">Ingredients (editable in the table above):</div>
+              <div className="text-sm bg-blue-600 text-white rounded p-3 mb-3 whitespace-pre-wrap">{recipeModal.meal?.ingredients || '—'}</div>
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
               {/* Editable recipe URL */}
               <form
                 className="mb-3 flex gap-2 items-center"
@@ -1714,6 +2181,9 @@ function generateEmptyWeeks() {
         )}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
         {/* Add Meal Modal */}
         {addModal.open && (
           <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setAddModal({ open: false, meal: addModal.meal })}>
@@ -1806,6 +2276,7 @@ function generateEmptyWeeks() {
           </div>
         )}
 
+<<<<<<< HEAD
         {/* Inline styles for readability and color accents */}
         <style>{`
           .meal-title{display:block;background:#fff;border:1px solid #bae6fd;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
@@ -1822,22 +2293,28 @@ function generateEmptyWeeks() {
           .cookB .meal-title{border-color:#ddd6fe}
           .cookDefault .meal-title{border-color:#bae6fd}
 =======
+=======
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
         {/* Inline styles for readability and color accents */}
         <style>{`
-          .meal-title{display:block;background:#fff;border:1px solid #cfe9d5;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
+          .meal-title{display:block;background:#fff;border:1px solid #bae6fd;border-radius:12px;padding:8px 12px;font-weight:600;color:#111827;line-height:1.3;box-shadow:inset 0 1px 0 rgba(16,185,129,.05)}
           .meal-title:hover{text-decoration:underline}
           .meal-ingredients{color:#374151;font-size:.95rem;line-height:1.35}
           .day-card{position:relative}
-          .cookA.day-card{border-left:6px solid #2563eb}
-          .cookB.day-card{border-left:6px solid #7c3aed}
-          .cookDefault.day-card{border-left:6px solid #14b8a6}
+          .cookA.day-card{border-left:6px solid #60a5fa}
+          .cookB.day-card{border-left:6px solid #c4b5fd}
+          .cookDefault.day-card{border-left:6px solid #93c5fd}
           .cookA .day-body{background:#eff6ff}
           .cookB .day-body{background:#f5f3ff}
-          .cookDefault .day-body{background:#ecfdf5}
+          .cookDefault .day-body{background:#f0f9ff}
           .cookA .meal-title{border-color:#bfdbfe}
           .cookB .meal-title{border-color:#ddd6fe}
+<<<<<<< HEAD
           .cookDefault .meal-title{border-color:#cfe9d5}
 >>>>>>> d80090c (Fix: cooks are now autosaved immediately after add/remove; dynamic subtitle for cooks)
+=======
+          .cookDefault .meal-title{border-color:#bae6fd}
+>>>>>>> a6a7235 (Disable caching for state/HTML, force no-store fetches, add Refresh button; set Netlify headers for cache control)
           @media print { header { display:none !important } body { background:white } }
         `}</style>
       </div>
