@@ -218,14 +218,21 @@ export default function MealPlannerApp() {
   const [recipeModal, setRecipeModal] = useState({ open: false, meal: null });
   const [addModal, setAddModal] = useState({ open: false, meal: { name: "", avg: 7, type: "Dinner", ingredients: "", recipeUrl: "" } });
   const [showSavedToast, setShowSavedToast] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
   const [exportWeeks, setExportWeeks] = useState([]);
 
   const csvInputRef = useRef(null);
   const xlsInputRef = useRef(null);
   const autosaveDebounceRef = useRef();
   const didPromptRestoreRef = useRef(false);
+  const [nowTs, setNowTs] = useState(Date.now());
 
   const cookName = (id) => cooks.find((c) => c.id === id)?.name || id;
+  // Lightweight ticker so the "Saved x min ago" text updates
+  useEffect(() => {
+    const id = setInterval(() => setNowTs(Date.now()), 15000);
+    return () => clearInterval(id);
+  }, []);
 
   // Sample data so UI isn't empty
   useEffect(() => {
@@ -464,6 +471,7 @@ function generateEmptyWeeks() {
     };
     try {
       await savePersisted(minimal);
+      setLastSavedAt(Date.now());
       setShowSavedToast(true);
       setTimeout(() => setShowSavedToast(false), 1200);
     } catch {}
@@ -501,6 +509,16 @@ function generateEmptyWeeks() {
   // Helper to trigger autosave immediately
   function triggerAutosave() {
     saveAutosave({ meals, weeks, cooks, startDate, repeatCap, threshold, mode, seed });
+  }
+  function savedLabel(ts) {
+    if (!ts) return '';
+    const secs = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (secs < 10) return 'just now';
+    if (secs < 60) return `${secs}s ago`;
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ago`;
   }
 
   // Cook list mgmt
@@ -677,9 +695,15 @@ function generateEmptyWeeks() {
                 <span className="block md:inline">{cooks.map(c => c.name).join(' & ')}</span>
               </p>
             </div>
-            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto items-stretch md:items-center">
               <Button className="bg-gray-900 text-white hover:opacity-90 w-full md:w-auto min-h-[44px] text-base" onClick={printPDF}><I.Print/> <span className="ml-1">Print / Save PDF</span></Button>
               <Button className="bg-indigo-600 text-white hover:bg-indigo-700 w-full md:w-auto min-h-[44px] text-base" onClick={downloadICS}><I.Cal/> <span className="ml-1">Export Dinners (.ics)</span></Button>
+              <div className="flex items-center justify-between md:justify-start gap-2 w-full md:w-auto">
+                <Button className="bg-white text-gray-700 border border-gray-300 w-full md:w-auto min-h-[44px]" onClick={triggerAutosave}><I.DL/> Save now</Button>
+                {!!lastSavedAt && (
+                  <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">Saved {savedLabel(lastSavedAt)}</span>
+                )}
+              </div>
             </div>
           </header>
 
